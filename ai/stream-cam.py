@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 import urllib.request
 import os
-import time
-from flask import Flask, render_template, Response
+from flask import Flask, Response
 
 app = Flask(__name__)
 
@@ -12,9 +11,9 @@ input_stream_url = "http://192.168.0.10/cam.mjpeg"
 models_path = "/var/bot/ai/models"
 output_image_path = "/var/bot/assets/stream"
 
-yolo_weights = f"{models_path}/yolov3.weights"
-yolo_cfg = f"{models_path}/yolov3.cfg"
-coco_names = f"{models_path}/coco.names"
+yolo_weights = os.path.join(models_path, "yolov3.weights")
+yolo_cfg = os.path.join(models_path, "yolov3.cfg")
+coco_names = os.path.join(models_path, "coco.names")
 
 confidence_threshold = 0.5
 nms_threshold = 0.4
@@ -46,18 +45,20 @@ def perform_detection(image, height, width, net, output_layers):
             class_id = np.argmax(scores)
             confidence = scores[class_id]
 
+            if confidence <= confidence_threshold:
+                continue
+
             # Object is deemed to be detected
-            if confidence > confidence_threshold:
-                # center_x, center_y, width, height = (detection[0:4] * np.array([w, h, w, h])).astype('int')
-                center_x, center_y, width, height = list(map(int, detection[0:4] * [width, height, width, height]))
-                # print(center_x, center_y, width, height)
+            # center_x, center_y, width, height = (detection[0:4] * np.array([w, h, w, h])).astype('int')
+            center_x, center_y, width, height = list(map(int, detection[0:4] * [width, height, width, height]))
+            # print(center_x, center_y, width, height)
 
-                top_left_x = int(center_x - (width / 2))
-                top_left_y = int(center_y - (height / 2))
+            top_left_x = int(center_x - (width / 2))
+            top_left_y = int(center_y - (height / 2))
 
-                boxes.append([top_left_x, top_left_y, width, height])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
+            boxes.append([top_left_x, top_left_y, width, height])
+            confidences.append(float(confidence))
+            class_ids.append(class_id)
 
     return boxes, confidences, class_ids
 
@@ -79,7 +80,7 @@ def draw_boxes(image, classes, colors, boxes, confidences, class_ids):
 
     return image
 
-def generate_frames():
+def process_cam_frames():
     net, classes, output_layers, colors = get_yolov3_setup()
 
     input_stream = urllib.request.urlopen(input_stream_url)
@@ -109,8 +110,8 @@ def generate_frames():
 
 
 @app.route('/')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+def stream_cam_output():
+    return Response(process_cam_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == '__main__':
