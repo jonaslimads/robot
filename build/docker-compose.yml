@@ -18,6 +18,8 @@ services:
       dockerfile: ai/Dockerfile
     image: bot-ai:0.1.0
     container_name: bot-ai
+    ports:
+      - "5000:5000"
     volumes:
       - ../ai:/var/bot/ai
       - ../assets:/var/bot/assets
