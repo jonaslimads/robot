@@ -1,0 +1,29 @@
+version: '3.8'
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "200m"
+      max-file: "15"
+x-network: &network
+  networks:
+    - bot
+
+services:
+  bot-ai:
+    build:
+      context: ./
+      dockerfile: ai/Dockerfile
+    image: bot-ai:0.1.0
+    container_name: bot-ai
+    volumes:
+      - ../ai:/var/bot/ai
+      - ../assets:/var/bot/assets
+    <<: *restart-policy
+    <<: *logging
+    <<: *network
+
+networks:
+  bot:
