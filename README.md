@@ -21,3 +21,4 @@ Then visit http://localhost:5000/ to stream a processed video.
 * https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/ 
 * https://www.pyimagesearch.com/2019/09/02/opencv-stream-video-to-web-browser-html-page/
 * https://scientric.com/2019/11/07/esp32-cam-stream-capture/#browser
+* https://github.com/nandinib1999/object-detection-yolo-opencv/blob/7b4e98cda1dd1967d545e9e5d913c7a323183508/yolo.py#L54

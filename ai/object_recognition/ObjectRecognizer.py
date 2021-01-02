@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 from threading import Thread, Lock, Semaphore
-from cam.CamInputStream import CamInputStream
+from object_recognition.CamInputStream import CamInputStream
 import time
 
 class ObjectRecognizer:
@@ -16,7 +16,6 @@ class ObjectRecognizer:
         self.boxes, self.confidences, self.class_ids = None, None, None
 
         self.started = False
-        self.lock = Lock()
         self.semaphore = Semaphore()
 
     def setup_yolov3(self):
@@ -38,7 +37,7 @@ class ObjectRecognizer:
             print("ObjectRecognizer thread already started!!")
             return None
 
-        self.input_stream.read() # to start reading
+        _, self.height, self.width = self.input_stream.read() # to start reading
 
         self.started = True
         self.thread_cam_input_stream = Thread(target=self.feed_from_input_stream, args=())
@@ -49,14 +48,15 @@ class ObjectRecognizer:
 
     def feed_from_input_stream(self):
         while self.started:
-            frame, height, width = self.input_stream.read()
+            frame, _, _ = self.input_stream.read()
 
-            self.boxes, self.confidences, self.class_ids = self.perform_detection(frame, height, width)
-            frame = self.draw_boxes(frame, self.boxes, self.confidences, self.class_ids)
+            blob, layer_outputs = self.detect_objects(frame)
+            boxes, confidences, class_ids = self.get_box_dimensions(layer_outputs)
+            frame = self.draw_labels(boxes, confidences, self.colors, class_ids, self.classes, frame)
             print("Draw!")
 
             self.semaphore.acquire()
-            self.frame, self.height, self.width = frame, height, width
+            self.frame = frame
             self.semaphore.release()
 
             # time.sleep(1 / 12) # 25fps
@@ -89,79 +89,53 @@ class ObjectRecognizer:
     #         # time.sleep(1 / 5) # to stabilize detection
 
     def read(self):
-        frame, _, _ = self.read_frame_height_width()
-        return frame
-
-    def read_frame_height_width(self):
         self.semaphore.acquire()
-        frame, height, width = self.frame, self.height, self.width
+        frame = self.frame
         self.semaphore.release()
-        return frame, height, width
+        return frame
 
     def stop(self):
         self.started = False
         if self.thread_cam_input_stream.is_alive():
             self.thread_cam_input_stream.join()
 
-    def process_frame(self, frame, height, width):
-        boxes, confidences, class_ids = self.perform_detection(frame, height, width)
-        frame = self.draw_boxes(frame, boxes, confidences, class_ids)
-
-        self.lock.acquire()
-        self.frame = frame
-        self.lock.release()
-
-    def perform_detection(self, image, height, width):
-        blob = cv2.dnn.blobFromImage(image, 1 / 255., (416, 416), swapRB=True, crop=False)
+    def detect_objects(self, image):
+        blob = cv2.dnn.blobFromImage(image, scalefactor=1.0/255, size=(224, 224), mean=(0, 0, 0), swapRB=True, crop=False)
         self.net.setInput(blob)
         layer_outputs = self.net.forward(self.output_layers)
+        return blob, layer_outputs
 
+    def get_box_dimensions(self, output_layers):
         boxes = []
         confidences = []
         class_ids = []
-
-        for output in layer_outputs:
-            for detection in output:
-                scores = detection[5:]
+        for output in output_layers:
+            for detect in output:
+                scores = detect[5:]
                 class_id = np.argmax(scores)
-                confidence = scores[class_id]
-
-                if confidence <= self.confidence_threshold:
-                    continue
-
-                # Object is deemed to be detected
-                # center_x, center_y, width, height = (detection[0:4] * np.array([w, h, w, h])).astype('int')
-                center_x, center_y, width, height = list(map(int, detection[0:4] * [width, height, width, height]))
-                # print(center_x, center_y, width, height)
-
-                top_left_x = int(center_x - (width / 2))
-                top_left_y = int(center_y - (height / 2))
-
-                boxes.append([top_left_x, top_left_y, width, height])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
-
+                conf = scores[class_id]
+                if conf > 0.3:
+                    center_x = int(detect[0] * self.width)
+                    center_y = int(detect[1] * self.height)
+                    w = int(detect[2] * self.width)
+                    h = int(detect[3] * self.height)
+                    x = int(center_x - w/2)
+                    y = int(center_y - h / 2)
+                    boxes.append([x, y, w, h])
+                    confidences.append(float(conf))
+                    class_ids.append(class_id)
         return boxes, confidences, class_ids
 
-
-    def draw_boxes(self, image, boxes, confidences, class_ids):
-        if not (boxes and confidences and class_ids):
-            return image
-
+    def draw_labels(self, boxes, confidences, colors, class_ids, classes, image):
         indexes = cv2.dnn.NMSBoxes(boxes, confidences, self.confidence_threshold, self.nms_threshold)
-        text_font = cv2.FONT_HERSHEY_SIMPLEX
-
-        if len(indexes) <= 0:
-            return image
-
-        for i in indexes.flatten():
-            x, y, w, h = boxes[i]
-            color = self.colors[i]
-            cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
-            # text = f"{class_ids[i]} -- {confidences[i]}"
-            text = "{}: {:.4f}".format(self.classes[class_ids[i]], confidences[i])
-            cv2.putText(image, text, (x, y - 5), text_font, 0.5, color, 2)
-
+        font = cv2.FONT_HERSHEY_PLAIN
+        for i in range(len(boxes)):
+            if i in indexes:
+                x, y, w, h = boxes[i]
+                label = str(classes[class_ids[i]])
+                color = colors[i]
+                cv2.rectangle(image, (x,y), (x+w, y+h), color, 2)
+                cv2.putText(image, label, (x, y - 5), font, 1, color, 1)
         return image
 
     def __exit__(self, exc_type, exc_value, traceback):
