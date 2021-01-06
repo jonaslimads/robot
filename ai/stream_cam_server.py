@@ -1,19 +1,21 @@
 import cv2
 from flask import Flask, Response
-from object_recognition.ObjectRecognizer import ObjectRecognizer
-
+from object_detection.ObjectDetection import ObjectDetection
 app = Flask(__name__)
 
+
 def process_cam_frames():
-    object_recognizer = ObjectRecognizer().start()
+    object_detection = ObjectDetection()
 
     while True:
-        frame = object_recognizer.read()
+        frame = object_detection.process_frame()
         if frame is None:
             continue
-        ret, buffer = cv2.imencode('.jpg', frame)
+
+        _, buffer = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
 
 @app.route('/')
 def stream_cam_output():

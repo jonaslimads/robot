@@ -27,5 +27,13 @@ services:
     <<: *logging
     <<: *network
 
+  bot-opencv:
+    image: nvidia/opencl:runtime-ubuntu18.04
+    container_name: bot-opencv
+    command: tail -F anything
+    <<: *restart-policy
+    <<: *logging
+    <<: *network
+
 networks:
   bot:

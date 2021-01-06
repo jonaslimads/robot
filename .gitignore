@@ -4,5 +4,6 @@
 
 assets/
 models/
+build/venv/
 
 *.pyc
