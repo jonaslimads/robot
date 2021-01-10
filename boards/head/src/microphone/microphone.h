@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <I2SMEMSSampler.h>
 #include "../websocket_client/WebSocketClient.h"
+#include "log.h"
 
 class Microphone {
 public:
@@ -20,6 +21,9 @@ public:
 private:
     I2SSampler *i2sSampler;
     std::function < void(uint8_t *bytes, size_t count) > sendDataCallback;
+    static size_t log(String text = "", bool sameLine = false) {
+        return _log(text, sameLine, "[Microphone] ");
+    };
 };
 
 #endif

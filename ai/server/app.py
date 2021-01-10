@@ -1,6 +1,10 @@
-from tornado import websocket, web, httpserver, ioloop
+import json
+from tornado import websocket, web, httpserver, ioloop, escape
+from MqttPublisher import MqttPublisher
 
 SERVER_PORT = 8765
+
+mqtt_publisher = MqttPublisher()
 
 
 class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
@@ -13,8 +17,8 @@ class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
     def on_message(self, message):
         # print('message received %s' % message)
         print(f'Received {len(message)} bytes')
-        with open("i2s.raw", "ab") as i2s_raw_file:
-            i2s_raw_file.write(message)
+        # with open("i2s.raw", "ab") as i2s_raw_file:
+        #     i2s_raw_file.write(message)
 
     def on_close(self):
         print('connection closed')
@@ -24,8 +28,30 @@ class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
         return True
 
 
+class MqttHandler(web.RequestHandler):
+    ROUTE = r'/command'
+
+    def set_default_headers(self):
+        self.set_header("Content-Type", 'application/json')
+
+    def return_400_bad_request(self, message=None) -> None:
+        self.set_status(400)
+        self.finish(json.dumps({'ok': False, 'message': message}))
+
+    def post(self) -> None:
+        data = escape.json_decode(self.request.body)
+        command = data.get('command', None)
+        if not command:
+            return self.return_400_bad_request('command bust be passed')
+
+        mqtt_publisher.publish(command)
+        print(f"Sent command to board `head`: {command}")
+        self.write(json.dumps({'ok': True}))
+
+
 app = web.Application([
     (MicrophoneWebSocketHandler.ROUTE, MicrophoneWebSocketHandler),
+    (MqttHandler.ROUTE, MqttHandler),
 ])
 
 

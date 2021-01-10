@@ -12,25 +12,14 @@ x-network: &network
     - bot
 
 services:
-  bot-ai:
-    build:
-      context: ./
-      dockerfile: ai/Dockerfile
-    image: bot-ai:0.1.0
-    container_name: bot-ai
-    ports:
-      - "5000:5000"
+  bot-mosquitto:
+    image: eclipse-mosquitto:2.0.4
+    container_name: bot-mosquitto
     volumes:
-      - ../ai:/var/bot/ai
-      - ../assets:/var/bot/assets
-    <<: *restart-policy
-    <<: *logging
-    <<: *network
-
-  bot-opencv:
-    image: nvidia/opencl:runtime-ubuntu18.04
-    container_name: bot-opencv
-    command: tail -F anything
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    ports:
+      - "1883:1883"
+      - "9001:9001"
     <<: *restart-policy
     <<: *logging
     <<: *network

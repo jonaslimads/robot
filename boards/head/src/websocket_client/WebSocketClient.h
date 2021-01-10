@@ -6,15 +6,20 @@
 #include <WiFiMulti.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsClient.h>
+#include "config.h"
+#include "log.h"
 
 class WebSocketClient {
 public:
     void connect();
-    static void sendData(uint8_t *bytes, size_t count);
     void loop();
+    static void sendData(uint8_t *bytes, size_t count);
 private:
     static void handleEvent(WStype_t type, uint8_t * payload, size_t length);
     static void hexdump(const void *mem, uint32_t len, uint8_t cols = 16);
+    static size_t log(String text = "", bool sameLine = false) {
+        return _log(text, sameLine, "[WebSocket] ");
+    };
 };
 
 #endif

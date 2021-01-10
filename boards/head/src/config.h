@@ -1,4 +1,4 @@
-// WIFI_SSID, WIFI_PASSWORD, WEBSOCKET_HOST are build flags from platformio.ini
+// See platformio.ini build_flags for other defines
 
 #ifndef PIN_MICROPHONE_I2S_SCK
 #define PIN_MICROPHONE_I2S_SCK GPIO_NUM_2
@@ -12,10 +12,10 @@
 #define PIN_MICROPHONE_I2S_WS GPIO_NUM_15
 #endif
 
-#ifndef WEBSOCKET_PORT
-#define WEBSOCKET_PORT 8765
-#endif
-
 #ifndef WEBSOCKET_MICROPHONE_PATH
 #define WEBSOCKET_MICROPHONE_PATH "/ws/microphone"
+#endif
+
+#ifndef MQTT_TOPIC
+#define MQTT_TOPIC "boards/head"
 #endif

@@ -36,7 +36,7 @@ void runI2sMemsWriterTask(void *param) {
 }
 
 void Microphone::start() {
-    Serial.println("Started microphone!");
+    log("Started");
     i2sSampler = new I2SMEMSSampler(i2sPins, false);
     
     TaskHandle_t i2sMemsWriterTaskHandle;

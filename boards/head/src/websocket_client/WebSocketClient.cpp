@@ -1,11 +1,10 @@
 #include <Arduino.h>
 #include "WebSocketClient.h"
-#include "../config.h"
 
 WebSocketsClient webSocket;
 
 void WebSocketClient::connect() {
-    Serial.println("[WebSocket] Connecting to websocket...");
+    log("Connecting to websocket...");
     webSocket.begin((char*) WEBSOCKET_HOST, WEBSOCKET_PORT, WEBSOCKET_MICROPHONE_PATH);
     webSocket.onEvent(handleEvent);
     webSocket.setReconnectInterval(5000);
@@ -18,7 +17,7 @@ void WebSocketClient::sendData(uint8_t *bytes, size_t count) {
 void WebSocketClient::handleEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
-			Serial.printf("[WebSocket] Disconnected!\n");
+			log("Disconnected!");
 			break;
 		case WStype_CONNECTED:
 			Serial.printf("[WebSocket] Connected to url: %s\n", payload);
@@ -40,7 +39,7 @@ void WebSocketClient::handleEvent(WStype_t type, uint8_t * payload, size_t lengt
 			// webSocket.sendBIN(payload, length);
 			break;
 		case WStype_ERROR:
-        	Serial.println("[WebSocket] Couldn't connect");
+        	log("Couldn't connect");
 		case WStype_FRAGMENT_TEXT_START:
 		case WStype_FRAGMENT_BIN_START:
 		case WStype_FRAGMENT:
