@@ -17,8 +17,8 @@ class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
     def on_message(self, message):
         # print('message received %s' % message)
         print(f'Received {len(message)} bytes')
-        # with open("i2s.raw", "ab") as i2s_raw_file:
-        #     i2s_raw_file.write(message)
+        with open("i2s.raw", "ab") as i2s_raw_file:
+            i2s_raw_file.write(message)
 
     def on_close(self):
         print('connection closed')
@@ -45,7 +45,7 @@ class MqttHandler(web.RequestHandler):
             return self.return_400_bad_request('command bust be passed')
 
         mqtt_publisher.publish(command)
-        print(f"Sent command to board `head`: {command}")
+        print(f"Sent command to boards/head: {command}")
         self.write(json.dumps({'ok': True}))
 
 

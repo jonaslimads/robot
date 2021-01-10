@@ -73,6 +73,16 @@ which will break the build.
 
 However if your env var value is integer you don't need two double quotes. 
 
+### Sending commands via MQTT
+
+```sh
+curl -X POST http://localhost:8765/command -d '{"command": "START_MICROPHONE"}'
+curl -X POST http://localhost:8765/command -d '{"command": "STOP_MICROPHONE"}'
+
+curl -X POST http://localhost:8765/command -d '{"command": "START_CAMERA"}'
+curl -X POST http://localhost:8765/command -d '{"command": "STOP_CAMERA"}'
+```
+
 
 ## BOM (to finish)
 

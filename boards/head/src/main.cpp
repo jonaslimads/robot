@@ -7,7 +7,11 @@
 
 WiFiClient wiFiClient;
 
-// PubSubClient client(wiFiClient);
+WebSocketClient *webSocketClient;
+
+Microphone *microphone;
+
+MqttClient *mqttClient;
 
 void connectToWiFi() {
     while (WiFi.status() != WL_CONNECTED) {
@@ -22,6 +26,24 @@ void setupSerial() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Serial.println();
+}
+
+void onMqttReceiveEventCallback(char* topic, byte *payload, unsigned int length) {
+    if (strcmp(topic, MQTT_TOPIC) != 0) {
+        return;
+    }
+
+    char command[length + 1];
+    memcpy(command, payload, length);
+    command[length] = 0;
+   
+    MqttClient::log("Received command: " + String(command));
+
+    if (strcmp(command, "START_MICROPHONE") == 0) {
+        microphone->start();
+    } else if (strcmp(command, "STOP_MICROPHONE") == 0) {
+        microphone->stop();
+    }
 }
 
 // for debug only
@@ -39,20 +61,19 @@ void setup() {
     setupSerial();
     printEnvVars();
 
-    MqttClient *mqttClient = new MqttClient(new PubSubClient(wiFiClient));
-    WebSocketClient *webSocketClient = new WebSocketClient();
-    Microphone *microphone = new Microphone();
-
     connectToWiFi();
 
+    mqttClient = new MqttClient(new PubSubClient(wiFiClient));
+    mqttClient->setCallback(onMqttReceiveEventCallback);
     mqttClient->connect();
     mqttClient->loop();
 
+    webSocketClient = new WebSocketClient();
     webSocketClient->connect();
     webSocketClient->loop();
 
+    microphone = new Microphone();
     microphone->setSendDataCallback(webSocketClient->sendData);
-    microphone->start();
 }
 
 void loop() {

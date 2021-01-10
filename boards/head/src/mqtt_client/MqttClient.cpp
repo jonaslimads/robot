@@ -4,7 +4,7 @@
 void MqttClient::connect() {
     while (!client->connected()) {
         // String clientId = "esp32-head-" + String(random(0xffff), HEX);
-        char* clientId = "boards/head";
+        char const *clientId = "boards/head";
         if (client->connect(clientId)) {
             log("Connected as " + String(clientId));
             client->publish(MQTT_TOPIC, "hello world");
@@ -15,13 +15,6 @@ void MqttClient::connect() {
             delay(5000);
         }
     }
-}
-
-void MqttClient::onReceiveEvent(char* topic, byte *payload, unsigned int length) {
-    log("------- new message from broker -----");
-    log("channel: " + String(topic));
-    log("data: ");  
-    Serial.write(payload, length);
 }
 
 void runMqttClientLoopTask(void *param) {

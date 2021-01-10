@@ -12,20 +12,28 @@ public:
     MqttClient(PubSubClient* client) {
         this->client = client;
         this->client->setServer(MQTT_HOST, MQTT_PORT);
-        this->client->setCallback(MqttClient::onReceiveEvent);
     };
+
     void connect();
+
     void publish(char *payload);
+
     void loop();
+
     PubSubClient* getClient() {
         return this->client;
     };
-    static void onReceiveEvent(char* topic, byte *payload, unsigned int length);
+
+    void setCallback(std::function < void(char* topic, byte *payload, unsigned int length) > onMqttReceiveEvent) {
+        this->client->setCallback(onMqttReceiveEvent);
+    };
+
+    static size_t log(String text = "", bool sameLine = false) {
+        return _log(text, sameLine, "[MQTT] ");
+    };
+
 private:
     PubSubClient* client;
-    static size_t log(String text = "", bool sameLine = false) {
-        return _log(text, sameLine, "[Mqtt] ");
-    };
 };
 
 #endif

@@ -46,8 +46,17 @@ void i2sReaderTask(void *param)
     }
 }
 
+TaskHandle_t readerTaskHandle;
+
 void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInBytes, TaskHandle_t writerTaskHandle)
 {
+    if(this->started) {
+        Serial.println("[I2SSampler] Error! Already started");
+        return;
+    }
+    
+    this->started = true;
+
     m_i2sPort = i2sPort;
     m_writerTaskHandle = writerTaskHandle;
     m_bufferSizeInSamples = bufferSizeInBytes / sizeof(int16_t);
@@ -64,6 +73,16 @@ void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t buff
     // set up the I2S configuration from the subclass
     configureI2S();
     // start a task to read samples from the ADC
-    TaskHandle_t readerTaskHandle;
     xTaskCreatePinnedToCore(i2sReaderTask, "i2s Reader Task", 4096, this, 1, &readerTaskHandle, 0);
+}
+
+void I2SSampler::stop() {
+    if(!this->started) {
+        Serial.println("[I2SSampler] Error! Already stopped");
+        return;
+    }
+    
+    this->started = false;
+    
+    vTaskDelete(readerTaskHandle);
 }

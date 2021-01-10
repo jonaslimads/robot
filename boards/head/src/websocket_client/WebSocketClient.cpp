@@ -4,7 +4,6 @@
 WebSocketsClient webSocket;
 
 void WebSocketClient::connect() {
-    log("Connecting to websocket...");
     webSocket.begin((char*) WEBSOCKET_HOST, WEBSOCKET_PORT, WEBSOCKET_MICROPHONE_PATH);
     webSocket.onEvent(handleEvent);
     webSocket.setReconnectInterval(5000);
@@ -20,23 +19,14 @@ void WebSocketClient::handleEvent(WStype_t type, uint8_t * payload, size_t lengt
 			log("Disconnected!");
 			break;
 		case WStype_CONNECTED:
-			Serial.printf("[WebSocket] Connected to url: %s\n", payload);
-
-			// send message to server when Connected
-			// webSocket.sendTXT("Connected");
+			Serial.printf("[WebSocket] Connected to URL: %s\n", payload);
 			break;
 		case WStype_TEXT:
-			Serial.printf("[WebSocket] get text: %s\n", payload);
-
-			// send message to server
-			// webSocket.sendTXT("message here");
+			Serial.printf("[WebSocket] Received text: %s\n", payload);
 			break;
 		case WStype_BIN:
-			Serial.printf("[WebSocket] get binary length: %u\n", length);
+			Serial.printf("[WebSocket] Received binary length: %u\n", length);
 			hexdump(payload, length);
-
-			// send data to server
-			// webSocket.sendBIN(payload, length);
 			break;
 		case WStype_ERROR:
         	log("Couldn't connect");
