@@ -42,6 +42,37 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 ./run_opencv.sh
 ```
 
+### Building boards code
+
+You need to export the env vars needed from [platformio.ini](boards/head/platformio.ini)'s build_flags. Add these env vars to your profile or export them before building the project:
+
+```sh
+export WIFI_SSID="\"<<your ssd>>\""
+export WIFI_PASSWORD="\"<<your password>>"\"
+export WEBSOCKET_HOST="\"192.168.0.4\""
+```
+
+Two double quotes for strings are needed because these env vars are injected as a "define", so we want something like:
+
+```
+#define WIFI_SSID "my ssid, even with whitespaces"
+#define WIFI_SSID "<<your password>>"
+#define WEBSOCKET_HOST "192.168.0.4"
+```
+
+One double quote would result:
+
+```c
+#define WIFI_SSID my ssid, even with whitespaces
+#define WIFI_PASSWORD my strong password
+#define WEBSOCKET_HOST 192.168.0.4
+```
+
+which will break the build.
+
+However if your env var value is integer, you should use one double quote.
+
+
 ## BOM (to finish)
 
 - ESP32-CAM
