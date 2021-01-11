@@ -1,17 +1,20 @@
 #include <Arduino.h>
 #include "MqttClient.h"
 
+static const char* TAG = "MQTT";
+
 void MqttClient::connect() {
     while (!client->connected()) {
-        // String clientId = "esp32-head-" + String(random(0xffff), HEX);
-        char const *clientId = "boards/head";
-        if (client->connect(clientId)) {
-            log("Connected as " + String(clientId));
-            client->publish(MQTT_TOPIC, "hello world");
+        String clientId = String(MQTT_TOPIC) + String("_") + String(random(0xffffff), HEX);
+        if (client->connect(clientId.c_str())) {
+            ESP_LOGI(TAG, "Connected to: topic %s", MQTT_TOPIC);
+            ESP_LOGI(TAG, "ClientID: %s", clientId.c_str());
             client->subscribe(MQTT_TOPIC);
         } else {
-            log("Failed, rc=" + String(client->state()), true);
-            log("Try again in 5 seconds...");
+            ESP_LOGE(TAG,
+                "Failed, rc=%s %d\nTrying again in 5 seconds",
+                String(client->state()).c_str(),
+                true);
             delay(5000);
         }
     }

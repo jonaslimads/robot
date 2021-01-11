@@ -5,7 +5,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "config.h"
-#include "log.h"
 
 class MqttClient {
 public:
@@ -16,8 +15,6 @@ public:
 
     void connect();
 
-    void publish(char *payload);
-
     void loop();
 
     PubSubClient* getClient() {
@@ -26,10 +23,6 @@ public:
 
     void setCallback(std::function < void(char* topic, byte *payload, unsigned int length) > onMqttReceiveEvent) {
         this->client->setCallback(onMqttReceiveEvent);
-    };
-
-    static size_t log(String text = "", bool sameLine = false) {
-        return _log(text, sameLine, "[MQTT] ");
     };
 
 private:

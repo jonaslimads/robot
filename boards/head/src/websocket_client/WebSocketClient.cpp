@@ -1,10 +1,12 @@
 #include <Arduino.h>
 #include "WebSocketClient.h"
 
+static const char* TAG = "WebSocket";
+
 WebSocketsClient webSocket;
 
 void WebSocketClient::connect() {
-    webSocket.begin((char*) WEBSOCKET_HOST, WEBSOCKET_PORT, WEBSOCKET_MICROPHONE_PATH);
+    webSocket.begin(WEBSOCKET_HOST, WEBSOCKET_PORT, WEBSOCKET_MICROPHONE_PATH);
     webSocket.onEvent(handleEvent);
     webSocket.setReconnectInterval(5000);
 }
@@ -16,24 +18,26 @@ void WebSocketClient::sendData(uint8_t *bytes, size_t count) {
 void WebSocketClient::handleEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
-			log("Disconnected!");
+			ESP_LOGI(TAG, "Disconnected from: %s:%d%s", WEBSOCKET_HOST, WEBSOCKET_PORT, payload);
 			break;
 		case WStype_CONNECTED:
-			Serial.printf("[WebSocket] Connected to URL: %s\n", payload);
+			ESP_LOGI(TAG, "Connected to: %s:%d%s", WEBSOCKET_HOST, WEBSOCKET_PORT, payload);
 			break;
 		case WStype_TEXT:
-			Serial.printf("[WebSocket] Received text: %s\n", payload);
+			ESP_LOGI(TAG, "Received text: %s", payload);
 			break;
 		case WStype_BIN:
-			Serial.printf("[WebSocket] Received binary length: %u\n", length);
+			ESP_LOGI(TAG, "Received binary length: %u", length);
 			hexdump(payload, length);
 			break;
 		case WStype_ERROR:
-        	log("Couldn't connect");
+        	ESP_LOGE(TAG, "Could not connect");
 		case WStype_FRAGMENT_TEXT_START:
 		case WStype_FRAGMENT_BIN_START:
 		case WStype_FRAGMENT:
 		case WStype_FRAGMENT_FIN:
+		case WStype_PING:
+		case WStype_PONG:
 			break;
 	}
 }

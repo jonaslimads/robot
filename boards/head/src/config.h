@@ -1,5 +1,23 @@
 // See platformio.ini build_flags for other defines
 
+#ifndef MQTT_TOPIC
+#define MQTT_TOPIC "boards/head"
+#endif
+
+#ifndef MQTT_TOPIC_LOG
+#define MQTT_TOPIC_LOG "boards/head:log"
+#endif
+
+#ifndef WEBSOCKET_MICROPHONE_PATH
+#define WEBSOCKET_MICROPHONE_PATH "/ws/microphone"
+#endif
+
+#ifndef WEBSOCKET_CAMERA_PATH
+#define WEBSOCKET_CAMERA_PATH "/ws/camera"
+#endif
+
+// Pins
+
 #ifndef PIN_MICROPHONE_I2S_SCK
 #define PIN_MICROPHONE_I2S_SCK GPIO_NUM_2
 #endif
@@ -12,10 +30,24 @@
 #define PIN_MICROPHONE_I2S_WS GPIO_NUM_15
 #endif
 
-#ifndef WEBSOCKET_MICROPHONE_PATH
-#define WEBSOCKET_MICROPHONE_PATH "/ws/microphone"
+// Commands
+
+#ifndef COMMAND_RESTART_BOARD
+#define COMMAND_RESTART_BOARD "RESTART_BOARD"
 #endif
 
-#ifndef MQTT_TOPIC
-#define MQTT_TOPIC "boards/head"
+#ifndef COMMAND_START_MICROPHONE
+#define COMMAND_START_MICROPHONE "START_MICROPHONE"
+#endif
+
+#ifndef COMMAND_STOP_MICROPHONE
+#define COMMAND_STOP_MICROPHONE "STOP_MICROPHONE"
+#endif
+
+#ifndef COMMAND_START_CAMERA
+#define COMMAND_START_CAMERA "START_CAMERA"
+#endif
+
+#ifndef COMMAND_STOP_CAMERA
+#define COMMAND_STOP_CAMERA "STOP_CAMERA"
 #endif

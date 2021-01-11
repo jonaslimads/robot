@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <I2SMEMSSampler.h>
 #include "../websocket_client/WebSocketClient.h"
-#include "log.h"
 
 class Microphone {
 public:
@@ -34,10 +33,6 @@ private:
     bool started = false;
     
     std::function < void(uint8_t *bytes, size_t count) > sendDataCallback;
-    
-    static size_t log(String text = "", bool sameLine = false) {
-        return _log(text, sameLine, "[Microphone] ");
-    };
 
     // i2s config for reading from both channels of I2S
     i2s_config_t i2sMemsConfigBothChannels = {

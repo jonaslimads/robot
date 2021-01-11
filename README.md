@@ -16,10 +16,10 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 - [ ] Connect more powerful camera to bot/PC for face detection and face/text recognition
 
 ### Hearing
-- [ ] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
-- [ ] Filter noises and stream a clean audio
+- [x] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
+- [x] Stream audio
 - [ ] Process audio for voice recognition
-- [ ] Add a Chatbot 
+- [ ] Add a Chatbot
 
 ### Speaking
 - [ ] Connect an audio amplifier. **TODO**: provide arduino project later on
@@ -27,7 +27,7 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 
 ### Face
 - [ ] Connect an LCD to ESP32
-- [ ] Based on some outside stimulus, the robot shows a different face to represent a feeling
+- [ ] Based on some outside stimuli or conversation via Chatbot, make the robot show a different face to represent a feeling
 
 ### Body
 - [ ] Use common and simple 2-wheel chassis as initial structure to mount sensors, DC motors and  
@@ -35,11 +35,11 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 
 ## Installing and running
 
-### OpenCV
+### Installing and running AI: OpenCV, DeepSpeech, broker and server
 
 ```sh
-./build/install_opencv.sh
-./run_opencv.sh
+./build/install_ai.sh
+./build/run_ai.sh
 ```
 
 ### Building boards code
@@ -55,9 +55,9 @@ export BOT_WEBSOCKET_HOST="\"192.168.0.4\""
 
 Two double quotes for strings are needed because these env vars are injected as a "define", so we want something like:
 
-```
+```c
 #define WIFI_SSID "my ssid, even with whitespaces"
-#define WIFI_SSID "<<your password>>"
+#define WIFI_SSID "my strong password"
 #define WEBSOCKET_HOST "192.168.0.4"
 ```
 
@@ -71,7 +71,7 @@ One double quote would result:
 
 which will break the build.
 
-However if your env var value is integer you don't need two double quotes. 
+However, if your env var value is integer you don't need two double quotes. 
 
 ### Sending commands via MQTT
 

@@ -5,7 +5,7 @@ readonly WORKING_DIRECTORY=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 readonly VENV_BIN_DIRECTORY="${WORKING_DIRECTORY}/venv/bin"
 
 main() {
-  # sudo apt-get install portaudio19-dev
+#   sudo apt-get install portaudio19-dev
 
   if [[ -d "${WORKING_DIRECTORY}/venv" ]]; then
     echo "venv folder exists with $(${VENV_BIN_DIRECTORY}/python --version) and following packages:"

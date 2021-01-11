@@ -1,18 +1,23 @@
 import json
-from tornado import websocket, web, httpserver, ioloop, escape
+import logging
+from tornado import websocket, web, httpserver, ioloop, escape, log
 from MqttPublisher import MqttPublisher
+
+PATH = '/home/jonas/Projects/bot/ai'  # todo: make it relative
 
 SERVER_PORT = 8765
 
 mqtt_publisher = MqttPublisher()
+
+# TODO: work on logging
+logger = logging.getLogger(__name__)
 
 
 class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
     ROUTE = r'/ws/microphone'
 
     def open(self):
-        print('New connection')
-        self.write_message("WEBSOCKET SERVER: Hello from the other side.")
+        self.log('New connection')
 
     def on_message(self, message):
         # print('message received %s' % message)
@@ -26,6 +31,9 @@ class MicrophoneWebSocketHandler(websocket.WebSocketHandler):
     # ESP32 comes outside host, so we must return True or add some kind of verification here
     def check_origin(self, origin):
         return True
+
+    def log(self, *args):
+        print("[Microphone] ", *args)
 
 
 class MqttHandler(web.RequestHandler):
@@ -45,8 +53,11 @@ class MqttHandler(web.RequestHandler):
             return self.return_400_bad_request('command bust be passed')
 
         mqtt_publisher.publish(command)
-        print(f"Sent command to boards/head: {command}")
+        self.log(f"Sent command to boards/head: {command}")
         self.write(json.dumps({'ok': True}))
+
+    def log(self, *args):
+        print("[MQTT] ", *args)
 
 
 app = web.Application([

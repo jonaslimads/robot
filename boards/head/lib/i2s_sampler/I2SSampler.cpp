@@ -3,6 +3,8 @@
 #include "I2SSampler.h"
 #include "driver/i2s.h"
 
+static const char* TAG = "I2SSampler";
+
 void I2SSampler::addSample(int16_t sample)
 {
     // add the sample to the current audio buffer
@@ -51,10 +53,10 @@ TaskHandle_t readerTaskHandle;
 void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInBytes, TaskHandle_t writerTaskHandle)
 {
     if(this->started) {
-        Serial.println("[I2SSampler] Error! Already started");
+        ESP_LOGW(TAG, "Error! Already started");
         return;
     }
-    
+
     this->started = true;
 
     m_i2sPort = i2sPort;
@@ -78,11 +80,11 @@ void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t buff
 
 void I2SSampler::stop() {
     if(!this->started) {
-        Serial.println("[I2SSampler] Error! Already stopped");
+        ESP_LOGW(TAG, "Error! Already stopped");
         return;
     }
-    
+
     this->started = false;
-    
+
     vTaskDelete(readerTaskHandle);
 }

@@ -2,6 +2,8 @@
 #include "microphone.h"
 #include "../config.h"
 
+static const char* TAG = "Microphone";
+
 TaskHandle_t i2sMemsWriterTaskHandle;
 
 void runI2sMemsWriterTask(void *param) {
@@ -19,7 +21,7 @@ void runI2sMemsWriterTask(void *param) {
 
 void Microphone::start() {
     if(this->started) {
-        log("Error! Already started");
+        ESP_LOGW(TAG, "Error! Already started");
         return;
     }
     
@@ -35,12 +37,12 @@ void Microphone::start() {
         1);
     
     i2sSampler->start(I2S_NUM_1, i2sMemsConfigBothChannels, 32768, i2sMemsWriterTaskHandle);
-    log("Started");
+    ESP_LOGI(TAG, "Started");
 }
 
 void Microphone::stop() {
     if(!this->started) {
-        log("Error! Already stopped");
+        ESP_LOGW(TAG, "Error! Already stopped");
         return;
     }
     
@@ -48,5 +50,5 @@ void Microphone::stop() {
 
     i2sSampler->stop();
     vTaskDelete(i2sMemsWriterTaskHandle);
-    log("Stopped");
+    ESP_LOGI(TAG, "Stopped");
 }

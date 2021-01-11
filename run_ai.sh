@@ -6,8 +6,10 @@ readonly VENV_BIN_DIRECTORY="${WORKING_DIRECTORY}/build/venv/bin"
 readonly PYTHON=${VENV_BIN_DIRECTORY}/python
 
 main() {
-  "${PYTHON}" ai/stream_cam_window.py
-#  "${PYTHON}" ai/stream_cam_server.py
+  cd "${WORKING_DIRECTORY}/build"
+  docker-compose up -d
+  cd "${WORKING_DIRECTORY}"
+  "${PYTHON}" ai/server/app
 }
 
 main "$@"
