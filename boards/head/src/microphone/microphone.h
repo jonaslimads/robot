@@ -1,30 +1,33 @@
 #ifndef __MICROPHONE_H__
 #define __MICROPHONE_H__
 
-#include <Arduino.h>
+#include <stdio.h>
+#include <functional>
 #include <I2SMEMSSampler.h>
-#include "../websocket_client/WebSocketClient.h"
+#include "../headers/Peripheral.h"
+#include "../headers/RemoteClient.h"
+#include "config.h"
 
-class Microphone {
+class Microphone : public Peripheral {
 public:
     Microphone() {
         this->i2sSampler = new I2SMEMSSampler(i2sPins, false);
     }
     
-    void start();
+    esp_err_t start();
     
-    void stop();
+    esp_err_t stop();
     
     I2SSampler *getI2sSampler() {
         return i2sSampler;
     };
-    
-    void setSendDataCallback(std::function < void(uint8_t *bytes, size_t count) > sendDataCallback) {
-        this->sendDataCallback = sendDataCallback;
+
+    void setRemoteClient(RemoteClient *remoteClient) {
+        this->remoteClient = remoteClient;
     };
-    
-    std::function < void(uint8_t *bytes, size_t count) > getSendDataCallback() {
-        return sendDataCallback;
+
+    RemoteClient* getRemoteClient() {
+        return this->remoteClient;
     };
 
 private:
@@ -32,7 +35,7 @@ private:
 
     bool started = false;
     
-    std::function < void(uint8_t *bytes, size_t count) > sendDataCallback;
+    RemoteClient *remoteClient;
 
     // i2s config for reading from both channels of I2S
     i2s_config_t i2sMemsConfigBothChannels = {

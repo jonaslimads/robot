@@ -2,6 +2,8 @@
 #ifndef __i2s_sampler_h__
 #define __i2s_sampler_h__
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "I2SSampler.h"
 
 class I2SMEMSSampler : public I2SSampler

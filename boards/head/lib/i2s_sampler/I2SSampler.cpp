@@ -1,7 +1,9 @@
 // Source: https://github.com/atomic14/esp32_audio/blob/master/i2s_sampling/src/I2SSampler.cpp
-#include <Arduino.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "esp_log.h"
 #include "I2SSampler.h"
-#include "driver/i2s.h"
 
 static const char* TAG = "I2SSampler";
 
@@ -69,7 +71,6 @@ void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t buff
     m_currentAudioBuffer = m_audioBuffer1;
     m_capturedAudioBuffer = m_audioBuffer2;
 
-    m_writerTaskHandle = writerTaskHandle;
     //install and start i2s driver
     i2s_driver_install(m_i2sPort, &i2sConfig, 4, &m_i2sQueue);
     // set up the I2S configuration from the subclass

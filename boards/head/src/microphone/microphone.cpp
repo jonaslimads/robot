@@ -1,4 +1,7 @@
-#include <Arduino.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
+#include "esp_err.h"
 #include "microphone.h"
 #include "../config.h"
 
@@ -14,22 +17,24 @@ void runI2sMemsWriterTask(void *param) {
     while (true) {
         uint32_t ulNotificationValue = ulTaskNotifyTake(pdTRUE, xMaxBlockTime);
         if (ulNotificationValue > 0) {
-            microphone->getSendDataCallback()((uint8_t *)sampler->getCapturedAudioBuffer(), sampler->getBufferSizeInBytes());
+            microphone->getRemoteClient()->sendBinary((char *)sampler->getCapturedAudioBuffer(), sampler->getBufferSizeInBytes());
         }
     }
 }
 
-void Microphone::start() {
+esp_err_t Microphone::start() {
     if(this->started) {
         ESP_LOGW(TAG, "Error! Already started");
-        return;
+        return ESP_FAIL;
     }
     
     this->started = true;
 
+    this->remoteClient->connect();
+
     xTaskCreatePinnedToCore(
         runI2sMemsWriterTask,
-        "I2S Writer Task",
+        "Microphone::start",
         4096,
         this,
         1,
@@ -38,17 +43,23 @@ void Microphone::start() {
     
     i2sSampler->start(I2S_NUM_1, i2sMemsConfigBothChannels, 32768, i2sMemsWriterTaskHandle);
     ESP_LOGI(TAG, "Started");
+    
+    return ESP_OK;
 }
 
-void Microphone::stop() {
+esp_err_t Microphone::stop() {
     if(!this->started) {
         ESP_LOGW(TAG, "Error! Already stopped");
-        return;
+        return ESP_FAIL;
     }
     
     this->started = false;
 
+    this->remoteClient->disconnect();
+
     i2sSampler->stop();
     vTaskDelete(i2sMemsWriterTaskHandle);
     ESP_LOGI(TAG, "Stopped");
+
+    return ESP_OK;
 }

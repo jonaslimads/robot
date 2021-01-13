@@ -1,8 +1,6 @@
 // Source: https://github.com/atomic14/esp32_audio/blob/master/i2s_sampling/src/I2SMEMSSampler.cpp
-#include <Arduino.h>
 #include "driver/i2s.h"
 #include "soc/i2s_reg.h"
-
 #include "I2SMEMSSampler.h"
 
 I2SMEMSSampler::I2SMEMSSampler(i2s_pin_config_t &i2sPins, bool fixSPH0645)

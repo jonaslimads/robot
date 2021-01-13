@@ -1,25 +1,35 @@
 #ifndef __WEBSOCKET_CLIENT_H__
 #define __WEBSOCKET_CLIENT_H__
 
-#include <Arduino.h>
-#include <WiFi.h>
-#include <WiFiMulti.h>
-#include <WiFiClientSecure.h>
-#include <WebSocketsClient.h>
+#include <stdio.h>
+#include "esp_websocket_client.h"
 #include "config.h"
+#include "../headers/RemoteClient.h"
 
-class WebSocketClient {
+// typedef void (*websocket_callback)(esp_websocket_client_handle_t client, const char *data, int length);
+
+class WebSocketClient : public RemoteClient {
 public:
-    void connect();
+    WebSocketClient(const char *path) {
+        this->path = path;
+    };
 
-    void loop();
+    esp_err_t connect();
 
-    static void sendData(uint8_t *bytes, size_t count);
+    esp_err_t disconnect();
+
+    // void loop();
+
+    void sendBinary(const char *data, int length);
 
 private:
-    static void handleEvent(WStype_t type, uint8_t * payload, size_t length);
+    // static void handleEvent(WStype_t type, uint8_t * payload, size_t length);
 
-    static void hexdump(const void *mem, uint32_t len, uint8_t cols = 16);
+    // static void hexdump(const void *mem, uint32_t len, uint8_t cols = 16);
+
+    esp_websocket_client_handle_t client;
+
+    const char* path;
 
 };
 

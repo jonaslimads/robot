@@ -2,7 +2,10 @@
 #ifndef __sampler_base_h__
 #define __sampler_base_h__
 
-#include <Arduino.h>
+#include <algorithm>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/i2s.h"
 
 /**

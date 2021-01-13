@@ -1,6 +1,15 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include "utils.h"
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
+#include "esp_spi_flash.h"
+#include "esp_log.h"
+#include "esp_event.h"
+#include <I2SMEMSSampler.h>
+#include "mqtt_client/MqttClient.h"
+
+#include "wifi/wifi_station.h"
+#include "headers/utils.h"
 #include "config.h"
 #include "microphone/microphone.h"
 #include "websocket_client/WebSocketClient.h"
@@ -8,76 +17,42 @@
 
 static const char* TAG = "Main";
 
-WiFiClient wiFiClient;
-
-WebSocketClient *webSocketClient;
-
 Microphone *microphone;
 
 MqttClient *mqttClient = NULL;
 
-int remote_log_vprintf(const char *fmt, va_list args) {
-    Serial.println("---> HERE WE ARE!!!");
+int remoteLogVprintf(const char *fmt, va_list args) {
+    int result = vprintf(fmt, args);
 
-    if (mqttClient == NULL) {
-        Serial.println("---> HUEZEIRAAA");
-        return vprintf(fmt, args);
+    if (mqttClient == NULL || !mqttClient->isConnected()) {
+        return result;
     }
     
-    char *logEntry;
-    sprintf(logEntry, fmt, args);
+    // char* buffer = (char*)malloc(sizeof(char) * MQTT_QUEUE_ITEM_SIZE);
+    // vsprintf(buffer, fmt, args);
+    char *buffer = "Hello, its me from ESP!";
+    mqttClient->publish(MQTT_TOPIC_LOG, buffer, strlen(buffer));
+    // free(buffer);
 
-    mqttClient->connect();
-    mqttClient->getClient()->publish(MQTT_TOPIC_LOG, logEntry);
-
-    return vprintf(fmt, args);
+    return result;
 }
 
-void onMqttReceiveEventCallback(char* topic, byte *payload, unsigned int length) {
-    if (!isEquals(topic, MQTT_TOPIC)) {
-        return;
-    }
-
-    const char* command = byteArrayToCharArray(payload, length);
-    ESP_LOGI(TAG, "Received command: %s", command);
-
-    if (isEquals(command, COMMAND_RESTART_BOARD)) {
-        ESP.restart();
-    } else if (isEquals(command, COMMAND_START_MICROPHONE)) {
-        microphone->start();
-    } else if (isEquals(command, COMMAND_STOP_MICROPHONE)) {
-        microphone->stop();
-    } else if (isEquals(command, COMMAND_START_CAMERA)) {
-        // camera->start();
-    } else if (isEquals(command, COMMAND_STOP_CAMERA)) {
-        // camera->stop();
-    } else {
-        ESP_LOGW(TAG, "Command not found");
-    }
+extern "C" {
+    void app_main(void);
 }
 
-void setup() {
-    esp_log_set_vprintf(remote_log_vprintf);
+void app_main() {
+    esp_log_set_vprintf(remoteLogVprintf);
 
-    setupSerial();
+    wifi_init();
 
-    connectToWiFi();
-
-    mqttClient = new MqttClient(new PubSubClient(wiFiClient));
-    mqttClient->setCallback(onMqttReceiveEventCallback);
+    mqttClient = new MqttClient();
     mqttClient->connect();
-    mqttClient->loop();
-
-    webSocketClient = new WebSocketClient();
-    webSocketClient->connect();
-    webSocketClient->loop();
 
     microphone = new Microphone();
-    microphone->setSendDataCallback(webSocketClient->sendData);
+    microphone->setRemoteClient(new WebSocketClient(WEBSOCKET_MICROPHONE_PATH));
+    // microphone->start();
 
-    logBoardInfo();
-}
-
-void loop() {
-    // all work is done by background tasks
+    // camera = new Camera();
+    // camera->setWebSocketClient(new WebSocketClient(WEBSOCKET_CAMERA_PATH));
 }

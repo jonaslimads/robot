@@ -19,7 +19,7 @@ services:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
     ports:
       - "1883:1883"
-      - "9001:9001"
+      - "9091:9001"
     <<: *restart-policy
     <<: *logging
     <<: *network

@@ -16,6 +16,7 @@
 #define WEBSOCKET_CAMERA_PATH "/ws/camera"
 #endif
 
+
 // Pins
 
 #ifndef PIN_MICROPHONE_I2S_SCK
@@ -29,6 +30,7 @@
 #ifndef PIN_MICROPHONE_I2S_WS
 #define PIN_MICROPHONE_I2S_WS GPIO_NUM_15
 #endif
+
 
 // Commands
 
@@ -50,4 +52,51 @@
 
 #ifndef COMMAND_STOP_CAMERA
 #define COMMAND_STOP_CAMERA "STOP_CAMERA"
+#endif
+
+
+// Log messages
+
+#ifndef LOG_MSG_STARTED
+#define LOG_MSG_STARTED "Started"
+#endif
+
+#ifndef LOG_MSG_STOPPED
+#define LOG_MSG_STOPPED "Stopped"
+#endif
+
+#ifndef LOG_MSG_CONNECTED
+#define LOG_MSG_CONNECTED "Connected"
+#endif
+
+#ifndef LOG_MSG_CONNECTED_TO
+#define LOG_MSG_CONNECTED_TO "Connected to %s"
+#endif
+
+#ifndef LOG_MSG_DISCONNECTED
+#define LOG_MSG_DISCONNECTED "Disconnected"
+#endif
+
+#ifndef LOG_MSG_DISCONNECTED_FROM
+#define LOG_MSG_DISCONNECTED_FROM "Disconnected from %s"
+#endif
+
+#ifndef LOG_MSG_MQTT_SUBSCRIBED_TO
+#define LOG_MSG_MQTT_SUBSCRIBED_TO "Subscribed to %s, msg_id=%d"
+#endif
+
+#ifndef LOG_MSG_MQTT_UNSUBSCRIBED_FROM
+#define LOG_MSG_MQTT_UNSUBSCRIBED_FROM "Unsubscribed from %s, msg_id=%d"
+#endif
+
+#ifndef LOG_MSG_MQTT_PUBLISHED
+#define LOG_MSG_MQTT_PUBLISHED "Published, msg_id=%d"
+#endif
+
+
+// Data sizes
+
+
+#ifndef MQTT_QUEUE_ITEM_SIZE
+#define MQTT_QUEUE_ITEM_SIZE 1024
 #endif
