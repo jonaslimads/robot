@@ -15,12 +15,17 @@ esp_err_t WebSocketClient::connect() {
 
 	ESP_LOGI(TAG, LOG_MSG_CONNECTED_TO, this->path);
 
-	return esp_websocket_client_start(this->client);
+	esp_err_t err = esp_websocket_client_start(this->client);
+	if (err == ESP_OK) {
+		this->connected = true;
+	}
+
+	return err;
 }
 
 esp_err_t WebSocketClient::disconnect() {
 	ESP_LOGI(TAG, LOG_MSG_DISCONNECTED_FROM, this->path);
-
+	this->connected = false;
 	return esp_websocket_client_destroy(this->client);
 }
 

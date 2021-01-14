@@ -5,7 +5,10 @@
 assets/
 models/
 build/venv/
+ai/etc/
 
 *.pyc
 i2s.raw
 profile.sh
+tmp_*.py
+

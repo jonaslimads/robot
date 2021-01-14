@@ -2,7 +2,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "microphone.h"
+#include "Microphone.h"
 #include "../config.h"
 
 static const char* TAG = "Microphone";

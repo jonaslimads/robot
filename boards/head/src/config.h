@@ -100,3 +100,7 @@
 #ifndef MQTT_QUEUE_ITEM_SIZE
 #define MQTT_QUEUE_ITEM_SIZE 1024
 #endif
+
+#ifndef MQTT_MAX_DATA_SIZE
+#define MQTT_MAX_DATA_SIZE 512
+#endif

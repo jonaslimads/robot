@@ -1,9 +1,11 @@
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "MqttClient.h"
+#include "../command/Command.h"
 
 static const char* TAG = "MQTT";
 
@@ -12,12 +14,13 @@ TaskHandle_t connectTaskHandle;
 TaskHandle_t publishTaskHandle;
 
 
-void eventHandler(void* args, esp_event_base_t base, int32_t eventId, void* eventData) {
+// No log should be written from MQTT_EVENT_PUBLISHED and MQTT_EVENT_DATA
+// to prevent loop and/or spam at removeTrimmedLogOutput.
+static void eventHandler(void *args, esp_event_base_t base, int32_t eventId, void *eventData) {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, eventId);
-
-    // MqttClient* mqttClient = (MqttClient*) args;
+    
+    MqttClient* mqttClient = (MqttClient*) args;
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) eventData;
-    // esp_mqtt_client_handle_t client = event->client;
 
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
@@ -32,19 +35,22 @@ void eventHandler(void* args, esp_event_base_t base, int32_t eventId, void* even
         case MQTT_EVENT_UNSUBSCRIBED:
             ESP_LOGI(TAG, LOG_MSG_MQTT_UNSUBSCRIBED_FROM, MQTT_TOPIC, event->msg_id);
             break;
+        case MQTT_EVENT_PUBLISHED:
+            break;
         case MQTT_EVENT_DATA:
-            ESP_LOGI(TAG, "Got event: TOPIC=%.*s\n DATA=%.*s", event->topic_len, event->topic, event->data_len, event->data);
+            // ESP_LOGI(TAG, ".. MQTT_EVENT_DATA");
+            // ESP_LOGI(TAG, ".. TOPIC=%.*s", event->topic_len, event->topic);
+            // ESP_LOGI(TAG, ".. DATA=%.*s", event->data_len, event->data);
+            event->data[event->data_len] = '\0';
+            mqttClient->getCommand()->run((char*)event->data);
             break;
         case MQTT_EVENT_ERROR:
-            // ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
-            break;
-        case MQTT_EVENT_PUBLISHED:
-            // no log should be written to prevent loop from remoteLogVprintf
+            ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
             break;
         case MQTT_EVENT_BEFORE_CONNECT:
             break;
         default:
-            ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+            ESP_LOGW(TAG, "Other event id:%d", event->event_id);
             break;
     }
 }
@@ -75,15 +81,14 @@ void connectTask(void *param) {
     vTaskDelete(NULL);
 }
 
-// no log should be written to prevent loop from remoteLogVprintf
+// no log should be written to prevent loop from removeTrimmedLogOutput
 void publishTask(void *param) {
     MqttClient *mqttClient = (MqttClient *)param;
-    esp_mqtt_event_t event;
-
     while(true) {
+        esp_mqtt_event_t event;
         if (xQueueReceive(mqttClient->publishQueue, &event, portMAX_DELAY) == pdPASS) {
+            // printf("[%s] Published %s", TAG, event.data);
             esp_mqtt_client_publish(mqttClient->client, event.topic, event.data, event.data_len, 0, 0);
-            printf("%s: Topic %s, published message: %s\n", TAG, event.topic, event.data);
         }
     }
 }
@@ -111,7 +116,7 @@ esp_err_t MqttClient::connect() {
 
     xTaskCreatePinnedToCore(
         publishTask,
-        "MqttClient::loop",
+        "MqttClient::publish",
         4096,
         this,
         1,
@@ -136,8 +141,11 @@ esp_err_t MqttClient::disconnect() {
     return esp_mqtt_client_destroy(this->client);
 }
 
-// no log should be written to prevent loop from remoteLogVprintf
+// no log should be written to prevent loop from removeTrimmedLogOutput
 void MqttClient::publish(char *topic, char *data, int len) {
+    // char _data[len];
+    // memcpy((char*)_data, data, len);
+
     esp_mqtt_event_t event;
     event.data = data;
     event.data_len = len;

@@ -10,14 +10,13 @@
 #include "mqtt_client.h"
 #include "../headers/RemoteClient.h"
 #include "config.h"
+#include "../command/Command.h"
 
 class MqttClient : public RemoteClient {
 public:
     esp_err_t connect();
 
     esp_err_t disconnect();
-
-    void loop();
 
     void publish(char *topic, char *data, int len);
 
@@ -28,15 +27,16 @@ public:
     void setClient(esp_mqtt_client* client) {
         this->client = client;
     };
-    void setIsConnected(bool connected) {
-        this->connected = connected;
-    };
-
-    bool isConnected() {
-        return this->connected;
-    };
 
     void sendBinary(const char *data, int length) {};
+
+    void setCommand(Command *command) {
+        this->command = command;
+    }
+
+    Command* getCommand() {
+        return this->command;
+    }
 
     friend void connectTask(void *param);
     
@@ -45,9 +45,9 @@ public:
 private:
     esp_mqtt_client_handle_t client;
 
-    bool connected = false;
-
     QueueHandle_t publishQueue;
+
+    Command* command;
 };
 
 #endif

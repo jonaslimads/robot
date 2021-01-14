@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -9,11 +10,11 @@
 #include "mqtt_client/MqttClient.h"
 
 #include "wifi/wifi_station.h"
-#include "headers/utils.h"
 #include "config.h"
-#include "microphone/microphone.h"
+#include "microphone/Microphone.h"
 #include "websocket_client/WebSocketClient.h"
 #include "mqtt_client/MqttClient.h"
+#include "command/Command.h"
 
 static const char* TAG = "Main";
 
@@ -21,37 +22,59 @@ Microphone *microphone;
 
 MqttClient *mqttClient = NULL;
 
-int remoteLogVprintf(const char *fmt, va_list args) {
-    int result = vprintf(fmt, args);
+WebSocketClient *logWebSocketClient = NULL;
 
-    if (mqttClient == NULL || !mqttClient->isConnected()) {
-        return result;
+Command *command = NULL;
+
+int removeTrimmedLogOutput(const char *fmt, va_list args) {
+    char* logMaxBuffer = (char*) malloc(sizeof(char) * MQTT_MAX_DATA_SIZE);
+    int length = vsprintf((char*) logMaxBuffer, fmt, args);
+
+    char* coloredLogOutput = (char*) malloc(sizeof(char) * (length + 1));
+    vsprintf(coloredLogOutput, fmt, args);
+    coloredLogOutput[length] = '\0';
+
+    if (mqttClient != NULL && mqttClient->isConnected()) {
+        mqttClient->publish((char*) MQTT_TOPIC_LOG, coloredLogOutput, length + 1);
     }
-    
-    // char* buffer = (char*)malloc(sizeof(char) * MQTT_QUEUE_ITEM_SIZE);
-    // vsprintf(buffer, fmt, args);
-    char *buffer = "Hello, its me from ESP!";
-    mqttClient->publish(MQTT_TOPIC_LOG, buffer, strlen(buffer));
-    // free(buffer);
 
-    return result;
+    free(logMaxBuffer);
+    // free(coloredLogOutput); // do not free yet (fix this, it must be freed)
+
+    // below leads to a segfault, so we trim the data in Python
+    // std::string logOutput = std::string(coloredLogOutput);
+    // // logOutput.erase(length - 3, 3); // r(it doesn't work, gives a segfault) - remove ANSI escape reset code + \n from end
+    // logOutput.erase(0, 7); // remove ANSI escape color code from beginning
+    // printf("%s", (char*)logOutput.c_str());
+    // if (logWebSocketClient != NULL && logWebSocketClient->isConnected()) {
+    //     logWebSocketClient->sendBinary(coloredLogOutput, length);
+    // }
+
+    return vprintf(fmt, args);
 }
 
 extern "C" {
     void app_main(void);
 }
 
+// https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/fatal-errors.html
+
 void app_main() {
-    esp_log_set_vprintf(remoteLogVprintf);
+    esp_log_set_vprintf(removeTrimmedLogOutput);
 
     wifi_init();
 
-    mqttClient = new MqttClient();
-    mqttClient->connect();
-
     microphone = new Microphone();
     microphone->setRemoteClient(new WebSocketClient(WEBSOCKET_MICROPHONE_PATH));
-    // microphone->start();
+
+    command = new Command(microphone);
+
+    mqttClient = new MqttClient();
+    mqttClient->setCommand(command);
+    mqttClient->connect();
+
+    // logWebSocketClient = new WebSocketClient("/ws/boards/head/log");
+    // logWebSocketClient->connect();
 
     // camera = new Camera();
     // camera->setWebSocketClient(new WebSocketClient(WEBSOCKET_CAMERA_PATH));
