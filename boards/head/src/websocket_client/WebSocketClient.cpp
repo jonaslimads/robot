@@ -23,14 +23,15 @@ esp_err_t WebSocketClient::connect() {
 	return err;
 }
 
+// TODO add handler to get an event when the client gets disconnected
 esp_err_t WebSocketClient::disconnect() {
 	ESP_LOGI(TAG, LOG_MSG_DISCONNECTED_FROM, this->path);
 	this->connected = false;
 	return esp_websocket_client_destroy(this->client);
 }
 
-void WebSocketClient::sendBinary(const char *data, int length) {
-	esp_websocket_client_send_bin(this->client, data, length, portMAX_DELAY);
+int WebSocketClient::sendBinary(const char *data, int length) {
+	return esp_websocket_client_send_bin(this->client, data, length, portMAX_DELAY);
 };
 
 // // #include <Arduino.h>

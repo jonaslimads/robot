@@ -28,7 +28,9 @@ public:
         this->client = client;
     };
 
-    void sendBinary(const char *data, int length) {};
+    int sendBinary(const char *data, int length) {
+        return -1;
+    };
 
     void setCommand(Command *command) {
         this->command = command;

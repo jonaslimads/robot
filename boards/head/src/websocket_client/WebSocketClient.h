@@ -18,15 +18,9 @@ public:
 
     esp_err_t disconnect();
 
-    // void loop();
-
-    void sendBinary(const char *data, int length);
+    int sendBinary(const char *data, int length);
 
 private:
-    // static void handleEvent(WStype_t type, uint8_t * payload, size_t length);
-
-    // static void hexdump(const void *mem, uint32_t len, uint8_t cols = 16);
-
     esp_websocket_client_handle_t client;
 
     const char* path;

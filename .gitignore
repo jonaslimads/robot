@@ -2,10 +2,10 @@
 *.idea
 *.iml
 
+# tmp:
+ai/
+old/
 assets/
-models/
-build/venv/
-ai/etc/
 
 *.pyc
 i2s.raw

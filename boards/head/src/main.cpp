@@ -12,6 +12,7 @@
 #include "wifi/wifi_station.h"
 #include "config.h"
 #include "microphone/Microphone.h"
+#include "camera/Camera.h"
 #include "websocket_client/WebSocketClient.h"
 #include "mqtt_client/MqttClient.h"
 #include "command/Command.h"
@@ -19,6 +20,8 @@
 static const char* TAG = "Main";
 
 Microphone *microphone;
+
+Camera *camera;
 
 MqttClient *mqttClient = NULL;
 
@@ -64,10 +67,13 @@ void app_main() {
 
     wifi_init();
 
+    camera = new Camera();
+    camera->setRemoteClient(new WebSocketClient(WEBSOCKET_CAMERA_PATH));
+
     microphone = new Microphone();
     microphone->setRemoteClient(new WebSocketClient(WEBSOCKET_MICROPHONE_PATH));
 
-    command = new Command(microphone);
+    command = new Command(camera, microphone);
 
     mqttClient = new MqttClient();
     mqttClient->setCommand(command);
@@ -75,7 +81,4 @@ void app_main() {
 
     // logWebSocketClient = new WebSocketClient("/ws/boards/head/log");
     // logWebSocketClient->connect();
-
-    // camera = new Camera();
-    // camera->setWebSocketClient(new WebSocketClient(WEBSOCKET_CAMERA_PATH));
 }

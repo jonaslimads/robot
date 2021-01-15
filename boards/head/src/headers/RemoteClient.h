@@ -8,7 +8,7 @@ public:
     virtual ~RemoteClient() {};
     virtual esp_err_t connect() = 0;
     virtual esp_err_t disconnect() = 0;
-    virtual void sendBinary(const char *data, int length) = 0;
+    virtual int sendBinary(const char *data, int length) = 0;
     void setIsConnected(bool connected) {
         this->connected = connected;
     };

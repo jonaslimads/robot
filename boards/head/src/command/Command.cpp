@@ -6,6 +6,7 @@
 #include "esp_event_base.h"
 #include "esp_timer.h"
 #include "Command.h"
+#include "commands.h"
 #include "../microphone/Microphone.h"
 
 static const char* TAG = "Command";
@@ -24,10 +25,12 @@ void Command::run(char* command) {
     } else if (isEquals(command, COMMAND_STOP_MICROPHONE)) {
         this->microphone->stop();
     } else if (isEquals(command, COMMAND_START_CAMERA)) {
-        // camera->start();
+        camera->start();
     } else if (isEquals(command, COMMAND_STOP_CAMERA)) {
-        // camera->stop();
-    } else {
+        camera->stop();
+    } else if (isEquals(command, COMMAND_TAKE_PHOTO)) {
+        camera->takePhoto();
+    }  else {
         ESP_LOGW(TAG, "Command %s not found", command);
     }
 }

@@ -69,8 +69,8 @@ void connectTask(void *param) {
     esp_err_t err = ESP_FAIL;
     while (err != ESP_OK) {
         err = esp_mqtt_client_start(mqttClient->client);
-        ESP_LOGW(TAG, "Could not connect. Error code: %d. Trying again in 5 seconds", err);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        ESP_LOGW(TAG, "Could not connect. Error code: %d. Trying again in 2 seconds", err);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
     
     mqttClient->connected = true;
