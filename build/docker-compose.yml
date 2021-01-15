@@ -9,12 +9,12 @@ x-logging: &logging
       max-file: "15"
 x-network: &network
   networks:
-    - bot
+    - robot
 
 services:
-  bot-mosquitto:
+  robot-mosquitto:
     image: eclipse-mosquitto:2.0.4
-    container_name: bot-mosquitto
+    container_name: robot-mosquitto
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
     ports:
@@ -25,4 +25,4 @@ services:
     <<: *network
 
 networks:
-  bot:
+  robot:

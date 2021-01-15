@@ -70,8 +70,8 @@ def sig_handler(server, sig, frame):
 def run_server():
     tornado.log.enable_pretty_logging()
 
-    port = os.getenv("BOT_SERVER_PORT", 8765)
-    logger.info(f"Starting Bot's mind server at port {port}...")
+    port = os.getenv("ROBOT_SERVER_PORT", 8765)
+    logger.info(f"Starting Robot's mind server at port {port}...")
 
     app = tornado.web.Application(routes)
 

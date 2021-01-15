@@ -5,7 +5,7 @@ Flask==1.1.2
 itsdangerous==1.1.0
 Jinja2==2.11.2
 MarkupSafe==1.1.1
--e git+git@github.com:jonaslimads/bot.git@000ccf1d6bef97412d29ba40c1432a8418947a1f#egg=mind&subdirectory=mind
+-e git+git@github.com:jonaslimads/robot.git@102379f8455f4541fc2dfea3c7bbb3ea149be115#egg=mind&subdirectory=mind
 mypy==0.790
 mypy-extensions==0.4.3
 numpy==1.19.5

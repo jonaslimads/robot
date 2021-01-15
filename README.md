@@ -13,7 +13,7 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 
 - [x] Stream from ESP32-CAM. **TODO**: provide arduino project later on
 - [x] Process ESP32-CAM stream for object recognition via OpenCV + YOLOv4. Output stream via Flask server and window (QT)
-- [ ] Connect more powerful camera to bot/PC for face detection and face/text recognition
+- [ ] Connect more powerful camera to robot/PC for face detection and face/text recognition
 
 ### Hearing
 - [x] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
@@ -47,9 +47,9 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 You need to export the env vars needed from [platformio.ini](boards/head/platformio.ini)'s build_flags. Add these [env vars](build/profile.sh) to your profile or export them before building the project:
 
 ```sh
-export BOT_WIFI_SSID="\"<<your ssd>>\""
-export BOT_WIFI_PASSWORD="\"<<your password>>"\"
-export BOT_WEBSOCKET_HOST="\"192.168.0.4\""
+export ROBOT_WIFI_SSID="\"<<your ssd>>\""
+export ROBOT_WIFI_PASSWORD="\"<<your password>>"\"
+export ROBOT_WEBSOCKET_HOST="\"192.168.0.4\""
 ...
 ```
 

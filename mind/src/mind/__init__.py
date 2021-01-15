@@ -42,7 +42,7 @@ class CustomFormatter(logging.Formatter):
 
 
 def get_logger(logger_name):
-    log_level = os.getenv("BOT_LOG_LEVEL", "DEBUG")
+    log_level = os.getenv("ROBOT_LOG_LEVEL", "DEBUG")
     logger = logging.getLogger(logger_name)
     logger.setLevel(log_level)
 

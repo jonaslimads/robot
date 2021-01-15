@@ -9,7 +9,7 @@ class MqttClient:
 
     host = "172.17.0.1"  # Docker's IP
 
-    port = int(os.getenv("BOT_MQTT_PORT", 1883))
+    port = int(os.getenv("ROBOT_MQTT_PORT", 1883))
 
     topic = "boards/head"
 
