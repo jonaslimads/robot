@@ -87,5 +87,7 @@ void I2SSampler::stop() {
 
     this->started = false;
 
+    i2s_driver_uninstall(m_i2sPort);
+
     vTaskDelete(readerTaskHandle);
 }

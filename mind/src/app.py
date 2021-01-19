@@ -8,13 +8,12 @@ from typing import List, Any
 
 import tornado.httpserver
 import tornado.ioloop
-import tornado.options
 import tornado.web
 import tornado.log
-from tornado.options import define, options
+from tornado.options import parse_command_line, define, options
 
 from mind import __version__, get_logger
-from mind.server.handlers import CameraWebSocketHandler, LogWebSocketHandler, MicrophoneWebSocketHandler, MqttWebHandler
+from mind.server import routes
 
 __author__ = "Jonas Lima"
 __copyright__ = "Jonas Lima"
@@ -22,12 +21,7 @@ __license__ = "gpl"
 
 logger = get_logger(__name__)
 
-routes = [
-    (r"/ws/camera", CameraWebSocketHandler),
-    (r"/ws/boards/head/log", LogWebSocketHandler),  # use regex
-    (r"/ws/microphone", MicrophoneWebSocketHandler),
-    (r"/command", MqttWebHandler),
-]
+define("port", default=int(os.getenv("ROBOT_SERVER_PORT", 8765)))
 
 
 # sources: https://gist.github.com/wonderbeyond/d38cd85243befe863cdde54b84505784
@@ -69,14 +63,14 @@ def sig_handler(server, sig, frame):
 
 def run_server():
     tornado.log.enable_pretty_logging()
+    parse_command_line()
 
-    port = os.getenv("ROBOT_SERVER_PORT", 8765)
-    logger.info(f"Starting Robot's mind server at port {port}...")
+    logger.info(f"Starting Robot's mind server at port {options.port}...")
 
     app = tornado.web.Application(routes)
 
     server = tornado.httpserver.HTTPServer(app)
-    server.listen(port)
+    server.listen(options.port)
 
     signal.signal(signal.SIGTERM, partial(sig_handler, server))
     signal.signal(signal.SIGINT, partial(sig_handler, server))

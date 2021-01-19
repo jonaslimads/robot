@@ -65,5 +65,5 @@ void Command::run(char* command) {
 // }
 
 // void postEvent(char *data) {
-//     // ESP_ERROR_CHECK(esp_event_post_to(loop_with_task, TASK_EVENTS, TASK_ITERATION_EVENT, data, strlen(data), portMAX_DELAY));
+//     // ESP_ERROR_CHECK(esp_event_post_to(loop_with_task, TASK_EVENTS, TASK_ITERATION_EVENT, data, (data), portMAX_DELAY));
 // }

@@ -14,13 +14,11 @@ static const char* TAG = "Camera";
 
 TaskHandle_t streamTaskHandle;
 
-// TaskHandle_t samplerTaskHandle;
-
-static esp_err_t captureAndStreamFrame(RemoteClient* remoteClient) {
+static esp_err_t captureAndStreamFrame(Camera* camera) {
     int64_t startTime = esp_timer_get_time();
     camera_fb_t* frame = esp_camera_fb_get();
 
-    if (!remoteClient->isConnected()) {
+    if (!camera->getRemoteClient()->isConnected()) {
         ESP_LOGW(TAG, "Remote client is still not connected...");
         return ESP_OK;
     }
@@ -30,29 +28,21 @@ static esp_err_t captureAndStreamFrame(RemoteClient* remoteClient) {
         return ESP_FAIL;
     }
 
-    size_t frameLength = frame->len;
-    int dataSendSize = remoteClient->sendBinary((char*) frame->buf, (int) frameLength);
+    int bytesSent = camera->Device::sendPacket((char*) frame->buf, (int) frame->len);
 
     esp_camera_fb_return(frame);
+
     int64_t endTime = esp_timer_get_time();
-    // ESP_LOGI(TAG, "JPG: %uKB %ums", (uint32_t)(frameLength / 1024), (uint32_t)((endTime - startTime) / 1000));
-    printf("[%s] JPG: %uKB %ums\n", TAG, (uint32_t)(frameLength / 1024), (uint32_t)((endTime - startTime) / 1000));
+    printf("[%s] JPG: %uKB %ums\n", TAG, (uint32_t)(frame->len / 1024), (uint32_t)((endTime - startTime) / 1000));
     
-    return dataSendSize -1 ? ESP_FAIL : ESP_OK;
+    return bytesSent -1 ? ESP_FAIL : ESP_OK;
 }
 
 void streamTask(void *param) {
     while(true) {
-        captureAndStreamFrame((RemoteClient*) param);
+        captureAndStreamFrame((Camera*) param);
     }
 }
-
-// void samplerTask(void *param) {
-//     while(true) {
-//         ESP_LOGI(TAG, "Sampling...");
-//         vTaskDelay(5000 / portTICK_PERIOD_MS);
-//     }
-// }
 
 esp_err_t Camera::start() {
     if(this->started) {
@@ -64,22 +54,11 @@ esp_err_t Camera::start() {
 
     this->started = true;
 
-    this->remoteClient->connect();
-
-    // xTaskCreatePinnedToCore(
-    //     samplerTask,
-    //     "Camera::sampler",
-    //     4096,
-    //     this->remoteClient,
-    //     1,
-    //     &samplerTaskHandle,
-    //     1);
-
     xTaskCreatePinnedToCore(
         streamTask,
         "Camera::stream",
         4096,
-        this->remoteClient,
+        this,
         1,
         &streamTaskHandle,
         1);
@@ -89,19 +68,17 @@ esp_err_t Camera::start() {
     return ESP_OK;
 }
 
-// TODO close camera
 esp_err_t Camera::stop() {
     if(!this->started) {
         ESP_LOGW(TAG, "Error! Already stopped");
         return ESP_FAIL;
     }
     
+    this->deinit();
+
     this->started = false;
 
-    this->remoteClient->disconnect();
-
     vTaskDelete(streamTaskHandle);
-    // vTaskDelete(samplerTaskHandle);
     ESP_LOGI(TAG, "Stopped");
     
     return ESP_OK;
@@ -121,6 +98,9 @@ esp_err_t Camera::takePhoto() {
   
     // return the frame buffer back to the driver for reuse
     // esp_camera_fb_return(fb);
+
+    this->deinit();
+
     return ESP_OK;
 }
 
@@ -138,7 +118,7 @@ esp_err_t Camera::init() {
 
     esp_err_t err = esp_camera_init(&this->config);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Camera Init Failed");
+        ESP_LOGE(TAG, "Init failed");
         return err;
     }
 
@@ -146,4 +126,30 @@ esp_err_t Camera::init() {
     ESP_LOGI(TAG, "Initiated");
 
     return ESP_OK;
+}
+
+
+// fix when deiniting:
+// E (37917) gpio: gpio_install_isr_service(438): GPIO isr service already installed
+// W (37917) camera: gpio_install_isr_service already installed
+esp_err_t Camera::deinit() {
+    if (!this->initiated) {
+        return ESP_OK;
+    }
+
+    esp_err_t err = esp_camera_deinit();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Deinit failed");
+        return err;
+    }
+
+    this->initiated = false;
+    ESP_LOGI(TAG, "Deinitiated");
+
+    return ESP_OK;
+}
+
+// TODO: use some JSON library to make it dynamic, but for now it suffices
+char* Camera::getPacketMetadata() {
+    return (char*)"{\"device\":{\"id\":\"C0\",\"type\":\"CAMERA\",\"params\":{}}}\r\n";
 }

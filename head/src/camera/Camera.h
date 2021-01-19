@@ -2,7 +2,7 @@
 #define __CAMERA_H__
 
 #include "esp_camera.h"
-#include "../headers/Peripheral.h"
+#include "../headers/Device.h"
 #include "../headers/RemoteClient.h"
 
 // AI-Thinker CAM board PIN Map
@@ -37,7 +37,7 @@
 #define CAM_FRAME_SIZE     FRAMESIZE_XGA
 
 
-class Camera : public Peripheral {
+class Camera : public Device {
 public:
     esp_err_t start();
     
@@ -45,23 +45,16 @@ public:
 
     esp_err_t takePhoto();
 
-    void setRemoteClient(RemoteClient *remoteClient) {
-        this->remoteClient = remoteClient;
-    };
-
-    RemoteClient* getRemoteClient() {
-        return this->remoteClient;
-    };
+protected:
+    char* getPacketMetadata();
 
 private:
-    bool started = false; // used for streaming
-
-    bool initiated = false; // used to turn on the camera
+    bool initiated = false; // used to turn on the camera, whilst started is for streaming
 
     esp_err_t init();
 
-    RemoteClient *remoteClient;
-    
+    esp_err_t deinit();
+
     camera_config_t config = {
         .pin_pwdn  = CAM_PIN_PWDN,
         .pin_reset = CAM_PIN_RESET,

@@ -8,14 +8,9 @@
 #define MQTT_TOPIC_LOG "boards/head:log"
 #endif
 
-#ifndef WEBSOCKET_MICROPHONE_PATH
-#define WEBSOCKET_MICROPHONE_PATH "/ws/microphone"
+#ifndef WEBSOCKET_PATH
+#define WEBSOCKET_PATH "/ws/head"
 #endif
-
-#ifndef WEBSOCKET_CAMERA_PATH
-#define WEBSOCKET_CAMERA_PATH "/ws/camera"
-#endif
-
 
 // Pins
 
@@ -70,6 +65,14 @@
 #define LOG_MSG_MQTT_PUBLISHED "Published, msg_id=%d"
 #endif
 
+
+#ifndef MICROPHONE_DEVICE_ID
+#define MICROPHONE_DEVICE_ID "m0"
+#endif
+
+#ifndef CAMERA_DEVICE_ID
+#define CAMERA_ID "m0"
+#endif
 
 // Data sizes
 

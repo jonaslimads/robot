@@ -19,13 +19,13 @@
 
 static const char* TAG = "Main";
 
-Microphone *microphone;
-
 Camera *camera;
+
+Microphone *microphone;
 
 MqttClient *mqttClient = NULL;
 
-WebSocketClient *logWebSocketClient = NULL;
+WebSocketClient *webSocketClient = NULL;
 
 Command *command = NULL;
 
@@ -37,9 +37,9 @@ int removeTrimmedLogOutput(const char *fmt, va_list args) {
     vsprintf(coloredLogOutput, fmt, args);
     coloredLogOutput[length] = '\0';
 
-    if (mqttClient != NULL && mqttClient->isConnected()) {
-        mqttClient->publish((char*) MQTT_TOPIC_LOG, coloredLogOutput, length + 1);
-    }
+    // if (mqttClient != NULL && mqttClient->isConnected()) {
+    //     mqttClient->publish((char*) MQTT_TOPIC_LOG, coloredLogOutput, length + 1);
+    // }
 
     free(logMaxBuffer);
     // free(coloredLogOutput); // do not free yet (fix this, it must be freed)
@@ -67,11 +67,14 @@ void app_main() {
 
     wifi_init();
 
+    webSocketClient = new WebSocketClient(WEBSOCKET_PATH);
+    webSocketClient->connect();
+
     camera = new Camera();
-    camera->setRemoteClient(new WebSocketClient(WEBSOCKET_CAMERA_PATH));
+    camera->setRemoteClient(webSocketClient);
 
     microphone = new Microphone();
-    microphone->setRemoteClient(new WebSocketClient(WEBSOCKET_MICROPHONE_PATH));
+    microphone->setRemoteClient(webSocketClient);
 
     command = new Command(camera, microphone);
 

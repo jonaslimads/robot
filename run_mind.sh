@@ -14,7 +14,7 @@ install() {
   # sudo apt-get install portaudio19-dev
 
   if [[ -d "${MIND_VENV_DIRECTORY}" ]]; then
-    exit 0
+    return
   fi
 
   echo -e "No installation found. Installing mind..."
@@ -32,16 +32,12 @@ install() {
 }
 
 run() {
-
-  
-
   cd "${BUILD_DIRECTORY}"
   echo -e "Running containers in background..."
   docker-compose up -d
 
-  cd "${MIND_DIRECTORY}"
-  "${MIND_PYTHON}" src/mind/app.py
-}
+  "${MIND_PYTHON}" "${MIND_DIRECTORY}/src/app.py"
+}  
 
 main() {
   install

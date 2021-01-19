@@ -2,13 +2,14 @@
 #define __MICROPHONE_H__
 
 #include <stdio.h>
+#include <string>
 #include <functional>
 #include <I2SMEMSSampler.h>
-#include "../headers/Peripheral.h"
+#include "../headers/Device.h"
 #include "../headers/RemoteClient.h"
 #include "config.h"
 
-class Microphone : public Peripheral {
+class Microphone : public Device {
 public:
     Microphone() {
         this->i2sSampler = new I2SMEMSSampler(i2sPins, false);
@@ -22,20 +23,11 @@ public:
         return i2sSampler;
     };
 
-    void setRemoteClient(RemoteClient *remoteClient) {
-        this->remoteClient = remoteClient;
-    };
-
-    RemoteClient* getRemoteClient() {
-        return this->remoteClient;
-    };
+protected:
+    char* getPacketMetadata();
 
 private:
     I2SSampler *i2sSampler;
-
-    bool started = false;
-    
-    RemoteClient *remoteClient;
 
     // i2s config for reading from both channels of I2S
     i2s_config_t i2sMemsConfigBothChannels = {

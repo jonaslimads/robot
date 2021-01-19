@@ -2,6 +2,7 @@
 #define __WEBSOCKET_CLIENT_H__
 
 #include <stdio.h>
+#include <string>
 #include "esp_websocket_client.h"
 #include "config.h"
 #include "../headers/RemoteClient.h"
@@ -12,6 +13,8 @@ class WebSocketClient : public RemoteClient {
 public:
     WebSocketClient(const char *path) {
         this->path = path;
+        std::string _packetMetadata = std::string("{\"device\":{\"id\":\"2\",\"type\":\"MICROPHONE\",\"params\":{}}}\r\n");
+        this->packetMetadata = _packetMetadata.c_str();
     };
 
     esp_err_t connect();
@@ -25,6 +28,8 @@ private:
 
     const char* path;
 
+    // TODO: improve
+    const char* packetMetadata;
 };
 
 #endif

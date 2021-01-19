@@ -1,3 +1,4 @@
+#include <cstring>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -17,7 +18,7 @@ void runI2sMemsWriterTask(void *param) {
     while (true) {
         uint32_t ulNotificationValue = ulTaskNotifyTake(pdTRUE, xMaxBlockTime);
         if (ulNotificationValue > 0) {
-            microphone->getRemoteClient()->sendBinary((char *)sampler->getCapturedAudioBuffer(), sampler->getBufferSizeInBytes());
+            microphone->Device::sendPacket((char *)sampler->getCapturedAudioBuffer(), sampler->getBufferSizeInBytes());
         }
     }
 }
@@ -29,8 +30,6 @@ esp_err_t Microphone::start() {
     }
     
     this->started = true;
-
-    this->remoteClient->connect();
 
     xTaskCreatePinnedToCore(
         runI2sMemsWriterTask,
@@ -55,11 +54,14 @@ esp_err_t Microphone::stop() {
     
     this->started = false;
 
-    this->remoteClient->disconnect();
-
     i2sSampler->stop();
     vTaskDelete(i2sMemsWriterTaskHandle);
     ESP_LOGI(TAG, "Stopped");
 
     return ESP_OK;
+}
+
+// TODO: use some JSON library to make it dynamic, but for now it suffices
+char* Microphone::getPacketMetadata() {
+    return (char*)"{\"device\":{\"id\":\"M0\",\"type\":\"MICROPHONE\",\"params\":{}}}\r\n";
 }

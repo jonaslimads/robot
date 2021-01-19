@@ -32,7 +32,7 @@ esp_err_t WebSocketClient::disconnect() {
 
 int WebSocketClient::sendBinary(const char *data, int length) {
 	return esp_websocket_client_send_bin(this->client, data, length, portMAX_DELAY);
-};
+}
 
 // // #include <Arduino.h>
 // #include "WebSocketClient.h"
