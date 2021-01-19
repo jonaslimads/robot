@@ -5,13 +5,14 @@ from tornado import web, escape
 from mind import get_logger
 from mind.mqtt.MqttClient import MqttClient
 
+client = MqttClient()
+
 
 class MqttWebHandler(web.RequestHandler):
 
     logger = get_logger("MQTT")
 
-    def initialize(self) -> None:
-        self.client = MqttClient()
+    # def initialize(self) -> None:
 
     def set_default_headers(self) -> None:
         self.set_header("Content-Type", "application/json")
@@ -26,6 +27,6 @@ class MqttWebHandler(web.RequestHandler):
         if not command:
             return self.return_400_bad_request("command bust be passed")
 
-        self.client.publish(message=command)
+        client.publish(message=command)
         self.logger.info(f"Sent command to boards/head: {command}")
         self.write(json.dumps({"ok": True}))

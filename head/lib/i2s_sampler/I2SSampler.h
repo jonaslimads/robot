@@ -35,6 +35,7 @@ private:
     QueueHandle_t m_i2sQueue;
     // i2s port
     i2s_port_t m_i2sPort;
+    bool initiated = false;
     bool started = false;
 protected:
     void addSample(int16_t sample);
@@ -54,7 +55,11 @@ public:
     {
         return m_capturedAudioBuffer;
     }
-    void start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInSamples, TaskHandle_t writerTaskHandle);
+    void init(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInSamples);
+
+    void deinit();
+
+    void start(TaskHandle_t writerTaskHandle);
 
     void stop();
 

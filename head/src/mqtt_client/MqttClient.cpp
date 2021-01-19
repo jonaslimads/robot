@@ -95,7 +95,7 @@ void publishTask(void *param) {
 
 esp_err_t MqttClient::connect() {
     if(this->connected) {
-        ESP_LOGW(TAG, "Error! Already connected");
+        ESP_LOGW(TAG, "Already connected");
         return ESP_FAIL;
     }
 
@@ -123,22 +123,25 @@ esp_err_t MqttClient::connect() {
         &publishTaskHandle,
         1);
 
+    this->connected = true;
+
     return ESP_OK;
 }
 
 esp_err_t MqttClient::disconnect() {
-    if(!this->connected) {
-        ESP_LOGW(TAG, "Error! Already disconnected");
-        return ESP_FAIL;
-    }
+    return ESP_OK;
+    // if(!this->connected) {
+    //     ESP_LOGW(TAG, "Already disconnected");
+    //     return ESP_FAIL;
+    // }
 
-    esp_mqtt_client_stop(this->client);
+    // esp_mqtt_client_stop(this->client);
 
-    this->setIsConnected(false);
+    // this->connected = false;
 
-    ESP_LOGI(TAG, LOG_MSG_DISCONNECTED);
+    // ESP_LOGI(TAG, LOG_MSG_DISCONNECTED);
 
-    return esp_mqtt_client_destroy(this->client);
+    // return esp_mqtt_client_destroy(this->client);
 }
 
 // no log should be written to prevent loop from removeTrimmedLogOutput

@@ -52,17 +52,13 @@ void i2sReaderTask(void *param)
 
 TaskHandle_t readerTaskHandle;
 
-void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInBytes, TaskHandle_t writerTaskHandle)
-{
-    if(this->started) {
-        ESP_LOGW(TAG, "Error! Already started");
+void I2SSampler::init(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t bufferSizeInBytes) {
+    if(this->initiated) {
+        ESP_LOGW(TAG, "Already initiated");
         return;
     }
 
-    this->started = true;
-
     m_i2sPort = i2sPort;
-    m_writerTaskHandle = writerTaskHandle;
     m_bufferSizeInSamples = bufferSizeInBytes / sizeof(int16_t);
     m_bufferSizeInBytes = bufferSizeInBytes;
     m_audioBuffer1 = (int16_t *)malloc(bufferSizeInBytes);
@@ -75,19 +71,37 @@ void I2SSampler::start(i2s_port_t i2sPort, i2s_config_t &i2sConfig, int32_t buff
     i2s_driver_install(m_i2sPort, &i2sConfig, 4, &m_i2sQueue);
     // set up the I2S configuration from the subclass
     configureI2S();
-    // start a task to read samples from the ADC
-    xTaskCreatePinnedToCore(i2sReaderTask, "i2s Reader Task", 4096, this, 1, &readerTaskHandle, 0);
+    this->initiated = true;
+}
+
+void I2SSampler::start(TaskHandle_t writerTaskHandle) {
+    if(this->started) {
+        ESP_LOGW(TAG, "Already started");
+        return;
+    }
+    m_writerTaskHandle = writerTaskHandle;
+    if (readerTaskHandle == NULL) {
+        xTaskCreatePinnedToCore(i2sReaderTask, "i2s Reader Task", 4096, this, 1, &readerTaskHandle, 0);
+    } else {
+        vTaskResume(readerTaskHandle);
+    }
+    this->started = true;
+}
+
+void I2SSampler::deinit() {
+    if(!this->initiated) {
+        ESP_LOGW(TAG, "Already deinitiated");
+        return;
+    }
+    i2s_driver_uninstall(m_i2sPort);
+    this->initiated = false;
 }
 
 void I2SSampler::stop() {
     if(!this->started) {
-        ESP_LOGW(TAG, "Error! Already stopped");
+        ESP_LOGW(TAG, "Already stopped");
         return;
     }
-
+    vTaskSuspend(readerTaskHandle);
     this->started = false;
-
-    i2s_driver_uninstall(m_i2sPort);
-
-    vTaskDelete(readerTaskHandle);
 }

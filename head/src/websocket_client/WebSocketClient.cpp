@@ -1,9 +1,37 @@
 #include <stdio.h>
 #include "esp_websocket_client.h"
 #include "esp_log.h"
+#include "esp_event.h"
 #include "WebSocketClient.h"
 
 static const char* TAG = "WebSocket";
+
+// No log should be written from WEBSOCKET_EVENT_PUBLISHED and WEBSOCKET_EVENT_DATA
+// to prevent loop and/or spam at removeTrimmedLogOutput.
+static void eventHandler(void *args, esp_event_base_t base, int32_t eventId, void *eventData) {
+    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, eventId);
+    
+    WebSocketClient* webSocketClient = (WebSocketClient*) args;
+    esp_websocket_event_data_t* event = (esp_websocket_event_data_t*) eventData;
+
+    switch (eventId) {
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI(TAG, LOG_MSG_CONNECTED_TO, WEBSOCKET_PATH);
+            break;
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG, LOG_MSG_DISCONNECTED_FROM, WEBSOCKET_PATH);
+            break;
+		case WEBSOCKET_EVENT_DATA:
+			// ESP_LOGI(TAG, "Got WEBSOCKET_EVENT_DATA - %s %d", event->data_ptr, event->data_len);
+            break;
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE(TAG, "WEBSOCKET_EVENT_ERROR");
+            break;
+        default:
+            ESP_LOGW(TAG, "Other event id: %d", event->op_code);
+            break;
+    }
+}
 
 esp_err_t WebSocketClient::connect() {
 	const esp_websocket_client_config_t config = {
@@ -13,98 +41,31 @@ esp_err_t WebSocketClient::connect() {
 	};
 	this->client = esp_websocket_client_init(&config);
 
-	ESP_LOGI(TAG, LOG_MSG_CONNECTED_TO, this->path);
+	esp_websocket_register_events(this->client, (esp_websocket_event_id_t) ESP_EVENT_ANY_ID, eventHandler, this);
+
+	// ESP_LOGI(TAG, LOG_MSG_CONNECTED_TO, this->path);
 
 	esp_err_t err = esp_websocket_client_start(this->client);
 	if (err == ESP_OK) {
 		this->connected = true;
 	}
 
+
 	return err;
 }
 
 // TODO add handler to get an event when the client gets disconnected
 esp_err_t WebSocketClient::disconnect() {
-	ESP_LOGI(TAG, LOG_MSG_DISCONNECTED_FROM, this->path);
-	this->connected = false;
-	return esp_websocket_client_destroy(this->client);
+	return ESP_OK;
+	// ESP_LOGI(TAG, LOG_MSG_DISCONNECTED_FROM, this->path);
+	// this->connected = false;
+	// return esp_websocket_client_destroy(this->client);
 }
 
 int WebSocketClient::sendBinary(const char *data, int length) {
 	return esp_websocket_client_send_bin(this->client, data, length, portMAX_DELAY);
 }
 
-// // #include <Arduino.h>
-// #include "WebSocketClient.h"
-
-
-// WebSocketsClient webSocket;
-
-// void WebSocketClient::connect() {
-//     webSocket.begin(WEBSOCKET_HOST, WEBSOCKET_PORT, WEBSOCKET_MICROPHONE_PATH);
-//     webSocket.onEvent(handleEvent);
-//     webSocket.setReconnectInterval(5000);
-// }
-
-// void WebSocketClient::sendData(uint8_t *bytes, size_t count) {
-//     webSocket.sendBIN(bytes, count);
-// }
-
-// void WebSocketClient::handleEvent(WStype_t type, uint8_t * payload, size_t length) {
-// 	switch(type) {
-// 		case WStype_DISCONNECTED:
-// 			ESP_LOGI(TAG, "Disconnected from: %s:%d%s", WEBSOCKET_HOST, WEBSOCKET_PORT, payload);
-// 			break;
-// 		case WStype_CONNECTED:
-// 			ESP_LOGI(TAG, "Connected to: %s:%d%s", WEBSOCKET_HOST, WEBSOCKET_PORT, payload);
-// 			break;
-// 		case WStype_TEXT:
-// 			ESP_LOGI(TAG, "Received text: %s", payload);
-// 			break;
-// 		case WStype_BIN:
-// 			ESP_LOGI(TAG, "Received binary length: %u", length);
-// 			hexdump(payload, length);
-// 			break;
-// 		case WStype_ERROR:
-//         	ESP_LOGE(TAG, "Could not connect");
-// 		case WStype_FRAGMENT_TEXT_START:
-// 		case WStype_FRAGMENT_BIN_START:
-// 		case WStype_FRAGMENT:
-// 		case WStype_FRAGMENT_FIN:
-// 		case WStype_PING:
-// 		case WStype_PONG:
-// 			break;
-// 	}
-// }
-
-// void WebSocketClient::hexdump(const void *mem, uint32_t len, uint8_t cols) {
-// 	const uint8_t* src = (const uint8_t*) mem;
-// 	Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
-// 	for(uint32_t i = 0; i < len; i++) {
-// 		if(i % cols == 0) {
-// 			Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
-// 		}
-// 		Serial.printf("%02X ", *src);
-// 		src++;
-// 	}
-// 	Serial.printf("\n");
-// }
-
-
-// void runWebSocketLoopTask(void *param) {
-// 	while (true) {
-// 		webSocket.loop();
-// 	}
-// }
-
-// void WebSocketClient::loop() {
-// 	TaskHandle_t webSocketLoopTaskHandle;
-//     xTaskCreatePinnedToCore(
-//         runWebSocketLoopTask,
-//         "WebSocket Loop Task",
-//         4096,
-//         NULL,
-//         1,
-//         &webSocketLoopTaskHandle,
-//         1);
-// }
+bool WebSocketClient::isConnected() {
+	return esp_websocket_client_is_connected(this->client);;
+}

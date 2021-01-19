@@ -13,8 +13,6 @@ class WebSocketClient : public RemoteClient {
 public:
     WebSocketClient(const char *path) {
         this->path = path;
-        std::string _packetMetadata = std::string("{\"device\":{\"id\":\"2\",\"type\":\"MICROPHONE\",\"params\":{}}}\r\n");
-        this->packetMetadata = _packetMetadata.c_str();
     };
 
     esp_err_t connect();
@@ -23,13 +21,12 @@ public:
 
     int sendBinary(const char *data, int length);
 
+    bool isConnected();
+
 private:
     esp_websocket_client_handle_t client;
 
     const char* path;
-
-    // TODO: improve
-    const char* packetMetadata;
 };
 
 #endif

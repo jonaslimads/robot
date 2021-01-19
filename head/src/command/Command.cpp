@@ -25,11 +25,11 @@ void Command::run(char* command) {
     } else if (isEquals(command, COMMAND_STOP_MICROPHONE)) {
         this->microphone->stop();
     } else if (isEquals(command, COMMAND_START_CAMERA)) {
-        camera->start();
+        this->camera->start();
     } else if (isEquals(command, COMMAND_STOP_CAMERA)) {
-        camera->stop();
+        this->camera->stop();
     } else if (isEquals(command, COMMAND_TAKE_PHOTO)) {
-        camera->takePhoto();
+        this->camera->takePhoto();
     }  else {
         ESP_LOGW(TAG, "Command %s not found", command);
     }

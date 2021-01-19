@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 #include "esp_event.h"
 #include <I2SMEMSSampler.h>
@@ -64,6 +65,7 @@ extern "C" {
 
 void app_main() {
     esp_log_set_vprintf(removeTrimmedLogOutput);
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
 
     wifi_init();
 
@@ -72,10 +74,12 @@ void app_main() {
 
     camera = new Camera();
     camera->setRemoteClient(webSocketClient);
+    camera->init();
 
     microphone = new Microphone();
     microphone->setRemoteClient(webSocketClient);
-
+    microphone->init();
+    
     command = new Command(camera, microphone);
 
     mqttClient = new MqttClient();

@@ -39,7 +39,12 @@
 
 class Camera : public Device {
 public:
+    // TODO: check if keeping the camera initiated is good and does not waste power
+    esp_err_t init();
+    
     esp_err_t start();
+
+    esp_err_t deinit();
     
     esp_err_t stop();
 
@@ -49,12 +54,6 @@ protected:
     char* getPacketMetadata();
 
 private:
-    bool initiated = false; // used to turn on the camera, whilst started is for streaming
-
-    esp_err_t init();
-
-    esp_err_t deinit();
-
     camera_config_t config = {
         .pin_pwdn  = CAM_PIN_PWDN,
         .pin_reset = CAM_PIN_RESET,

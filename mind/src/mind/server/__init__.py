@@ -8,8 +8,8 @@
 
 # ============ WebSocket =========
 #
-# Real-time duplex communication between boards and servers are made with Websocket located at:
-# ws://<ip>/<board>
+# Real-time duplex communication between boards and server is made with Websocket that area located at:
+# ws://<ip>/ws/<board>
 #
 # We want to send different types of data (microphone, audio, sensors etc.)
 # through a single connection for each board. This reduces complexity of adding new peripherals,
@@ -18,6 +18,7 @@
 # To achieve that, we will add metadata written in JSON delimited by \r\n,
 # then the data follows:
 # {"a":"b","c":["d"]}\r\n...data...
+#
 #
 # ============ Streams from server to outside =========
 #
@@ -31,7 +32,7 @@ from mind.server.handlers.MqttWebHandler import MqttWebHandler
 
 routes = [
     # (r"/(?P<board>[A-Za-z]+)", TestBoardWebSocketHandler),
-    (r"/ws/head", BoardWebSocketHandler),
+    (r"/ws/(?P<board>[A-Za-z]+)", BoardWebSocketHandler),
     (r"/camera", CameraWebHandler),
     (r"/command", MqttWebHandler),
     # (r"/microphone", MicrophoneWebHandler),

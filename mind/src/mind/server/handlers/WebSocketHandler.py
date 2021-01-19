@@ -17,5 +17,6 @@ class WebSocketHandler(websocket.WebSocketHandler):
         self.logger.info("Connection closed")
 
     # ESP32 comes outside host, so we must return True or add some kind of verification here
+    # TODO: allow boards' IP here, instead of True for everyone
     def check_origin(self, origin) -> bool:
         return True

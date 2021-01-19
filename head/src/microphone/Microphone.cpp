@@ -8,9 +8,9 @@
 
 static const char* TAG = "Microphone";
 
-TaskHandle_t i2sMemsWriterTaskHandle;
+TaskHandle_t bufferWriterTaskHandle = NULL;
 
-void runI2sMemsWriterTask(void *param) {
+void bufferWriterTask(void *param) {
     Microphone *microphone = (Microphone *)param;
     I2SSampler *sampler = microphone->getI2sSampler();
     const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100);
@@ -23,39 +23,68 @@ void runI2sMemsWriterTask(void *param) {
     }
 }
 
-esp_err_t Microphone::start() {
-    if(this->started) {
-        ESP_LOGW(TAG, "Error! Already started");
+esp_err_t Microphone::init() {
+    if(this->initiated) {
+        ESP_LOGW(TAG, "Already initiated");
         return ESP_FAIL;
     }
     
-    this->started = true;
+    i2sSampler->init(I2S_NUM_1, i2sMemsConfigBothChannels, 32768);
+    this->initiated = true;
+    ESP_LOGI(TAG, "Initiated");
 
-    xTaskCreatePinnedToCore(
-        runI2sMemsWriterTask,
-        "Microphone::start",
-        4096,
-        this,
-        1,
-        &i2sMemsWriterTaskHandle,
-        1);
+    return ESP_OK;
+}
+
+esp_err_t Microphone::start() {
+    if(this->started) {
+        ESP_LOGW(TAG, "Already started");
+        return ESP_FAIL;
+    }
     
-    i2sSampler->start(I2S_NUM_1, i2sMemsConfigBothChannels, 32768, i2sMemsWriterTaskHandle);
+    if (bufferWriterTaskHandle == NULL) {
+        xTaskCreatePinnedToCore(
+            bufferWriterTask,
+            "Microphone::start",
+            4096,
+            this,
+            1,
+            &bufferWriterTaskHandle,
+            1);
+    } else {
+        vTaskResume(bufferWriterTaskHandle);
+    }
+
+    i2sSampler->start(bufferWriterTaskHandle);
+
+    this->started = true;
     ESP_LOGI(TAG, "Started");
-    
+
+    return ESP_OK;
+}
+
+// TODO: turn off cam. Not used
+esp_err_t Microphone::deinit() {
+    if(!this->initiated) {
+        ESP_LOGW(TAG, "Already deinitiated");
+        return ESP_FAIL;
+    }
+
+    this->initiated = false;
+
     return ESP_OK;
 }
 
 esp_err_t Microphone::stop() {
     if(!this->started) {
-        ESP_LOGW(TAG, "Error! Already stopped");
+        ESP_LOGW(TAG, "Already stopped");
         return ESP_FAIL;
     }
     
     this->started = false;
 
     i2sSampler->stop();
-    vTaskDelete(i2sMemsWriterTaskHandle);
+    vTaskSuspend(bufferWriterTaskHandle);
     ESP_LOGI(TAG, "Stopped");
 
     return ESP_OK;

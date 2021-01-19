@@ -15,7 +15,11 @@ public:
         this->i2sSampler = new I2SMEMSSampler(i2sPins, false);
     }
     
+    esp_err_t init();
+    
     esp_err_t start();
+
+    esp_err_t deinit();
     
     esp_err_t stop();
     
