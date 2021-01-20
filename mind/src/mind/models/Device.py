@@ -9,6 +9,9 @@ from mind.models.BaseModel import BaseModel
 @attr.s(auto_attribs=True)
 class Device(BaseModel):
     class Type(Enum):
+        def __str__(self):
+            return str(self.value)
+
         MICROPHONE = "MICROPHONE"
         CAMERA = "CAMERA"
 

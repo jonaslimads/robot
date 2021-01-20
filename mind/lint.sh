@@ -4,7 +4,7 @@ set -o errexit -o pipefail -o nounset
 readonly WORKING_DIRECTORY=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 readonly VENV_BIN_DIRECTORY="${WORKING_DIRECTORY}/.venv/bin"
 readonly SOURCE_DIRECTORY="${WORKING_DIRECTORY}/src"
-readonly TESTS_DIRECTORY="${WORKING_DIRECTORY}/src"
+readonly TESTS_DIRECTORY="${WORKING_DIRECTORY}/tests"
 
 main() {
     ${VENV_BIN_DIRECTORY}/black --line-length=130 "${SOURCE_DIRECTORY}"

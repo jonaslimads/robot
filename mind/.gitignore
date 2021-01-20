@@ -1,5 +1,6 @@
 assets/
 datasets/
+examples/
 
 # Temporary and binary files
 *~
