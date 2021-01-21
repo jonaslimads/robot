@@ -14,6 +14,7 @@ from tornado.options import parse_command_line, define, options
 
 from mind import __version__, get_logger
 from mind.server import routes
+from mind.speech_to_text.AudioTranscriber import AudioTranscriber
 
 __author__ = "Jonas Lima"
 __copyright__ = "Jonas Lima"
@@ -61,6 +62,10 @@ def sig_handler(server, sig, frame):
     io_loop.add_callback_from_signal(shutdown)
 
 
+def start_background_tasks():
+    AudioTranscriber().start()
+
+
 def run_server():
     tornado.log.enable_pretty_logging()
     parse_command_line()
@@ -75,7 +80,9 @@ def run_server():
     signal.signal(signal.SIGTERM, partial(sig_handler, server))
     signal.signal(signal.SIGINT, partial(sig_handler, server))
 
-    tornado.ioloop.IOLoop.instance().start()
+    io_loop = tornado.ioloop.IOLoop.current()
+    start_background_tasks()
+    io_loop.start()
 
     logger.info("Exit...")
 

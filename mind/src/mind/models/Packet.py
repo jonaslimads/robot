@@ -30,3 +30,14 @@ class Packet(BaseModel):
         packet._data = data[delimiter_pos + 2 :]
 
         return packet
+
+    def is_empty(self) -> bool:
+        return self._data == b""
+
+    @staticmethod
+    def CAMERA_EMPTY_PACKET() -> "Packet":
+        return Packet(Device("c0", Device.Type.CAMERA))
+
+    @staticmethod
+    def MICROPHONE_EMPTY_PACKET() -> "Packet":
+        return Packet(Device("m0", Device.Type.MICROPHONE))

@@ -1,3 +1,9 @@
+"""
+These are global queues, which are used to feed data from one endpoint/feature to another in an asynchronous fashion.
+
+Local queues should be defined within their classes/modules.
+"""
+
 from tornado.queues import Queue, QueueFull
 
 from mind import get_logger
@@ -9,6 +15,8 @@ logger = get_logger(__name__)
 camera_queue: Queue = Queue(maxsize=5)
 
 microphone_queue: Queue = Queue(maxsize=5)
+
+audio_transcriber_queue: Queue = Queue(maxsize=5)
 
 
 def put_packet_to_queue(packet: Packet) -> None:

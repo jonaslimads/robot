@@ -3,7 +3,7 @@
 This is an ongoing personal project where I gather different solutions to implement a smart and autonomous robot.
 
 The goal is to make the robot see, listen, speak and move around.
-The "brain" will run on a server (such as your computer), which will feed from ESP32 serial data/audio/video streams.
+The [mind](mind/) will run on a server (such as your computer), which will feed from ESP32 serial data/audio/video streams.
 
 The software will be mostly set up via Docker, however OpenCV is easier to run on the bare metal machine plus it can make use of GPUs.     
 
