@@ -27,7 +27,7 @@ class ObjectDetection:
         self.colors = np.random.uniform(0, 255, size=(len(self.classes), 3))
 
     def get_dataset_path(self, file_name):
-        models_path = os.path.join(os.path.dirname(__file__), "../../../datasets")
+        models_path = os.path.join(os.path.dirname(__file__), "../../../models/yolov4")
         return os.path.join(models_path, file_name)
 
     def process_frames_from_bytes(self, data: bytes, recognize_objects: bool = True) -> bytes:

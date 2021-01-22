@@ -7,6 +7,11 @@ The [mind](mind/) will run on a server (such as your computer), which will feed 
 
 The software will be mostly set up via Docker, however OpenCV is easier to run on the bare metal machine plus it can make use of GPUs.     
 
+# Diagrams
+
+## Process flow diagram
+TODO
+
 ## Checklist
 
 ### Sight

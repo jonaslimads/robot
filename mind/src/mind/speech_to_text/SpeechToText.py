@@ -14,6 +14,8 @@ x = 2 * 16000 = 32000 bytes/s = 32 bytes/ms
 
 If we want a frame of 30ms, we get 32 bytes * 30 of data
 
+That calculation above is implemented in SpeechToText.audio_frame_generator
+
 """
 import collections
 import os
@@ -33,10 +35,7 @@ from mind.queues import microphone_queue, audio_transcriber_queue
 from mind.models import AudioFrame
 
 
-bytes_per_ms = 32  # see comments above
-
-
-class AudioTranscriber:
+class SpeechToText:
     logger = get_logger(__name__)
 
     sample_rate = 16000
@@ -51,7 +50,7 @@ class AudioTranscriber:
     # start/finish collecting voiced frames
     vad_tolerance = 0.9
 
-    deepspeech_models_folder = os.path.join(os.path.dirname(__file__), "../../../datasets/deepspeech")
+    deepspeech_models_folder = os.path.join(os.path.dirname(__file__), "../../../models/deepspeech")
 
     deepspeech_model: Model
 
@@ -133,7 +132,7 @@ class AudioTranscriber:
                 buffer.clear()
 
     async def audio_frame_generator(self):
-        frame_data_length: int = int(self.frame_duration_ms * bytes_per_ms)
+        frame_data_length: int = int(self.frame_duration_ms * 2 * self.sample_rate / 1000)
         duration: float = (float(frame_data_length) / self.sample_rate) / 2.0
         timestamp: float = 0.0
         leftover_from_last_audio_data: bytes = b""

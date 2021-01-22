@@ -14,6 +14,11 @@ finally:
     del get_distribution, DistributionNotFound
 
 
+__author__ = "Jonas Lima"
+__copyright__ = "Jonas Lima"
+__license__ = "gpl"
+
+
 class CustomFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""
 
