@@ -18,12 +18,14 @@ If we want a frame of 30ms, we get 32 bytes * 30 of data
 import collections
 import os
 from typing import List, Tuple
+import time
 from timeit import default_timer as timer
 
-from deepspeech import Model
+from deepspeech import Model, Stream
 import numpy as np
 from tornado.ioloop import IOLoop
 from tornado.queues import Queue, QueueFull
+import wave
 import webrtcvad
 
 from mind import get_logger
@@ -51,9 +53,18 @@ class AudioTranscriber:
 
     deepspeech_models_folder = os.path.join(os.path.dirname(__file__), "../../../datasets/deepspeech")
 
-    def __init__(self):
-        self.ds = self.load_deepspeech_model()
+    deepspeech_model: Model
+
+    def __init__(self, output_to_file=False):
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
+        self.deepspeech_model = self.load_deepspeech_model()
+
+        if output_to_file:
+            self.output_file_name = os.path.join(
+                os.path.dirname(__file__), "../../../assets/output/audio/audio_" + str(time.time())
+            )
+        else:
+            self.output_file_name = None
 
     def start(self):
         IOLoop.current().spawn_callback(self.process_voiced_audio)
@@ -63,69 +74,62 @@ class AudioTranscriber:
         scorer = os.path.join(self.deepspeech_models_folder, "deepspeech-0.9.3-models.scorer")
 
         model_load_start = timer()
-        ds = Model(model)
+        deepspeech_model = Model(model)
         model_load_end = timer() - model_load_start
         self.logger.debug("Loaded model in %0.3fs." % (model_load_end))
 
         scorer_load_start = timer()
-        ds.enableExternalScorer(scorer)
+        deepspeech_model.enableExternalScorer(scorer)
         scorer_load_end = timer() - scorer_load_start
         self.logger.debug("Loaded external scorer in %0.3fs." % (scorer_load_end))
 
-        return ds
+        return deepspeech_model
 
     async def process_voiced_audio(self):
-        i: int = 0
-        self.logger.debug("Processing audio chunk %002d" % (i,))
+        stream = self.deepspeech_model.createStream()
+
+        i = 1
         async for _bytes in self.voiced_audio_generator():
-            i += 1
-            [text, inference_time] = self.run_audio_inference(_bytes)
-            if text:
-                await audio_transcriber_queue.put(text)
-                self.logger.info(f"Transcript: {text}")
+            if _bytes is not None:
+                stream.feedAudioContent(np.frombuffer(_bytes, np.int16))
             else:
-                self.logger.warning(f"Transcript is empty! It may be an error on the code.")
-
-    def run_audio_inference(self, audio_data: bytes) -> Tuple[str, float]:
-        audio = np.frombuffer(audio_data, dtype=np.int16)
-        audio_length = len(audio) * (1 / self.sample_rate)
-        inference_time = 0.0
-
-        inference_start = timer()
-        output = self.ds.stt(audio)
-        inference_end = timer() - inference_start
-        inference_time += inference_end
-        self.logger.debug("Inference took %0.3fs for %0.3fs audio file." % (inference_end, audio_length))
-
-        return output, inference_time
+                text = stream.finishStream()
+                await audio_transcriber_queue.put(text)
+                stream = self.deepspeech_model.createStream()
+                if text:
+                    self.logger.info(f"Transcript #{i}: {text}")
+                else:
+                    self.logger.debug(f"Transcript #{i} is empty!")
+                i += 1
 
     async def voiced_audio_generator(self):
         num_padding_frames = int(self.padding_duration_ms / self.frame_duration_ms)
         buffer = collections.deque(maxlen=num_padding_frames)  # ring buffer
         is_detecting_voice = False
-        voiced_frames: List[AudioFrame] = []
 
         async for frame in self.audio_frame_generator():
-            if frame.is_empty() and voiced_frames:
-                yield b"".join([f.data for f in voiced_frames])
+            if frame.is_empty():
+                yield None
+                buffer.clear()
                 continue
+
+            self.store_audio_data(frame.data)
 
             is_speech = self.vad.is_speech(frame.data, self.sample_rate)
             buffer.append((frame, is_speech))
 
             if is_detecting_voice:
-                voiced_frames.append(frame)
+                yield frame.data
                 if self.count_voiced_frames_from_buffer_percentage(buffer) < (1 - self.vad_tolerance):
                     is_detecting_voice = False
-                    yield b"".join([f.data for f in voiced_frames])
-                    voiced_frames = []
+                    yield None
                     buffer.clear()
                 continue
 
             if self.count_voiced_frames_from_buffer_percentage(buffer) >= self.vad_tolerance:
                 is_detecting_voice = True
                 for f, _ in buffer:
-                    voiced_frames.append(f)
+                    yield f.data
                 buffer.clear()
 
     async def audio_frame_generator(self):
@@ -155,3 +159,29 @@ class AudioTranscriber:
 
     def count_voiced_frames_from_buffer_percentage(self, buffer) -> float:
         return len([f for f, is_speech in buffer if is_speech]) / buffer.maxlen
+
+    def store_audio_data(self, data: bytes, chunk_name="") -> None:
+        if not self.output_file_name:
+            return
+
+        path = self.output_file_name + ("" if not chunk_name else "_" + chunk_name) + ".raw"
+        with open(path, "ab") as raw_file:
+            raw_file.write(data)
+
+    def store_audio_transcript(self, text: str) -> None:
+        if not self.output_file_name:
+            return
+
+        with open(f"{self.output_file_name}.txt", "a") as text_file:
+            text_file.write(text + "\n")
+
+    def store_partial_audio_data(self, data: bytes, chunk_name="") -> None:
+        if not self.output_file_name:
+            return
+
+        path = self.output_file_name + ("" if not chunk_name else "_" + chunk_name) + ".wav"
+        with wave.open(path, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(self.sample_rate)
+            wf.writeframes(data)

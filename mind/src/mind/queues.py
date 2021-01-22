@@ -12,11 +12,11 @@ from mind.models import Device, Packet
 
 logger = get_logger(__name__)
 
-camera_queue: Queue = Queue(maxsize=5)
+camera_queue: Queue = Queue(maxsize=20)
 
-microphone_queue: Queue = Queue(maxsize=5)
+microphone_queue: Queue = Queue(maxsize=20)
 
-audio_transcriber_queue: Queue = Queue(maxsize=5)
+audio_transcriber_queue: Queue = Queue(maxsize=20)
 
 
 def put_packet_to_queue(packet: Packet) -> None:

@@ -18,7 +18,7 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 ### Hearing
 - [x] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
 - [x] Stream audio
-- [ ] Process audio for voice recognition
+- [x] Process audio for voice recognition
 - [ ] Add a Chatbot
 
 ### Speaking

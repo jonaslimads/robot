@@ -1,6 +1,7 @@
 assets/
 datasets/
 examples/
+!tests/assets
 
 # Temporary and binary files
 *~
