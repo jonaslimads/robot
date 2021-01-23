@@ -3,7 +3,7 @@ import json
 from tornado import web, escape
 
 from mind import get_logger
-from mind.mqtt.MqttClient import MqttClient
+from mind.mqtt import MqttClient
 
 client = MqttClient()
 

@@ -1,10 +1,25 @@
 import os
-import cv2
+import time
 from typing import Any, Optional, Tuple
 
+import cv2
 import numpy as np
+from tornado.queues import Queue
 
-from mind.object_detection.FPS import FPS
+from mind.messaging import Listener
+from mind.models import Packet, Device
+
+
+class ObjectDetectionListener(Listener):
+
+    queue: Queue = Queue(maxsize=20)
+
+    def enqueue(self, packet: Packet) -> None:
+        if packet.device.type == Device.Type.MICROPHONE:
+            super().enqueue(packet)
+
+    async def listen(self):
+        await ObjectDetection(self.queue).process_voiced_audio()
 
 
 class ObjectDetection:
@@ -17,7 +32,8 @@ class ObjectDetection:
 
     model_input_params = dict(size=(224, 224), scale=1 / 255)
 
-    def __init__(self):
+    def __init__(self, queue: Queue) -> None:
+        self.queue = queue
         self.net = cv2.dnn.readNet(self.get_dataset_path("yolov4.weights"), self.get_dataset_path("yolov4.cfg"))
         # self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         # self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
@@ -27,7 +43,7 @@ class ObjectDetection:
         self.colors = np.random.uniform(0, 255, size=(len(self.classes), 3))
 
     def get_dataset_path(self, file_name):
-        models_path = os.path.join(os.path.dirname(__file__), "../../../models/yolov4")
+        models_path = os.path.join(os.path.dirname(__file__), "../../models/yolov4")
         return os.path.join(models_path, file_name)
 
     def process_frames_from_bytes(self, data: bytes, recognize_objects: bool = True) -> bytes:
@@ -59,3 +75,19 @@ class ObjectDetection:
     def encode_frame_to_bytes(self, frame: Any) -> bytes:
         _, buffer = cv2.imencode(".jpg", frame)
         return buffer.tobytes()
+
+
+class FPS:
+    def __init__(self):
+        self._start = time.time()
+        self._end = None
+
+    def end(self):
+        self._end = time.time()
+
+    @property
+    def label(self):
+        if self._end is None:
+            self.end()
+
+        return "FPS: %.2f" % (1 / (self._end - self._start))

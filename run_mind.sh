@@ -36,7 +36,7 @@ run() {
   echo -e "Running containers in background..."
   docker-compose up -d
 
-  "${MIND_PYTHON}" "${MIND_DIRECTORY}/src/app.py"
+  "${MIND_PYTHON}" "${MIND_DIRECTORY}/app.py"
 }  
 
 main() {

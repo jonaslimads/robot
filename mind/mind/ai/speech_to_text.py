@@ -1,5 +1,5 @@
 """
-microphone_queue brings data that can or cannot be voiced audio.
+The queue brings data that can or cannot be voiced audio.
 So we must filter out non-voiced audio frames.
 
 Based on https://github.com/mozilla/DeepSpeech-examples/blob/r0.9/vad_transcriber/wavSplit.py#L62
@@ -19,24 +19,40 @@ That calculation above is implemented in SpeechToText.audio_frame_generator
 """
 import collections
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import time
 from timeit import default_timer as timer
 
 from deepspeech import Model, Stream
+from noisereduce import reduce_noise
 import numpy as np
-from tornado.ioloop import IOLoop
 from tornado.queues import Queue, QueueFull
 import wave
 import webrtcvad
 
-from mind import get_logger
-from mind.queues import microphone_queue, audio_transcriber_queue
-from mind.models import AudioFrame
+from mind import get_logger, publisher
+from mind.messaging import Listener
+from mind.models import AudioFrame, Device, Message, Packet, Text
+
+
+logger = get_logger(__name__)
+
+
+class SpeechToTextListener(Listener):
+
+    queue: Queue = Queue(maxsize=20)
+
+    def enqueue(self, packet: Packet) -> None:
+        if packet.device.type == Device.Type.MICROPHONE:
+            super().enqueue(packet)
+
+    async def listen(self):
+        await SpeechToText(self.queue).process_voiced_audio()
 
 
 class SpeechToText:
-    logger = get_logger(__name__)
+
+    queue: Queue
 
     sample_rate = 16000
 
@@ -44,29 +60,30 @@ class SpeechToText:
 
     padding_duration_ms = 300
 
-    vad_aggressiveness = 3  # from 0-3
+    vad_aggressiveness = 1  # from 0-3
 
     # the minimum % of frames in a given set of audio frames to
     # start/finish collecting voiced frames
     vad_tolerance = 0.9
 
-    deepspeech_models_folder = os.path.join(os.path.dirname(__file__), "../../../models/deepspeech")
+    deepspeech_models_folder = os.path.join(os.path.dirname(__file__), "../../models/deepspeech")
 
     deepspeech_model: Model
 
-    def __init__(self, output_to_file=False):
+    noise_sample_data: np.ndarray
+
+    def __init__(self, queue: Queue, output_to_file=True):
+        self.queue = queue
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
         self.deepspeech_model = self.load_deepspeech_model()
+        self.noise_sample_data = self.load_noise_sample_data()
 
         if output_to_file:
             self.output_file_name = os.path.join(
-                os.path.dirname(__file__), "../../../assets/output/audio/audio_" + str(time.time())
+                os.path.dirname(__file__), "../../assets-old/output/audio/audio_" + str(time.time())
             )
         else:
             self.output_file_name = None
-
-    def start(self):
-        IOLoop.current().spawn_callback(self.process_voiced_audio)
 
     def load_deepspeech_model(self):
         model = os.path.join(self.deepspeech_models_folder, "deepspeech-0.9.3-models.pbmm")
@@ -75,12 +92,12 @@ class SpeechToText:
         model_load_start = timer()
         deepspeech_model = Model(model)
         model_load_end = timer() - model_load_start
-        self.logger.debug("Loaded model in %0.3fs." % (model_load_end))
+        logger.debug("Loaded model in %0.3fs." % (model_load_end))
 
         scorer_load_start = timer()
         deepspeech_model.enableExternalScorer(scorer)
         scorer_load_end = timer() - scorer_load_start
-        self.logger.debug("Loaded external scorer in %0.3fs." % (scorer_load_end))
+        logger.debug("Loaded external scorer in %0.3fs." % (scorer_load_end))
 
         return deepspeech_model
 
@@ -91,14 +108,15 @@ class SpeechToText:
         async for _bytes in self.voiced_audio_generator():
             if _bytes is not None:
                 stream.feedAudioContent(np.frombuffer(_bytes, np.int16))
+                self.store_audio_data(_bytes, str(i))
             else:
                 text = stream.finishStream()
-                await audio_transcriber_queue.put(text)
+                publisher.publish(Text(text))
                 stream = self.deepspeech_model.createStream()
                 if text:
-                    self.logger.info(f"Transcript #{i}: {text}")
+                    logger.debug(f"Transcript #{i}: {text}")
                 else:
-                    self.logger.debug(f"Transcript #{i} is empty!")
+                    logger.debug(f"Transcript #{i} is empty!")
                 i += 1
 
     async def voiced_audio_generator(self):
@@ -119,13 +137,13 @@ class SpeechToText:
 
             if is_detecting_voice:
                 yield frame.data
-                if self.count_voiced_frames_from_buffer_percentage(buffer) < (1 - self.vad_tolerance):
+                if self.count_buffer_frames_percentage(buffer, is_speech=False) >= self.vad_tolerance:
                     is_detecting_voice = False
                     yield None
                     buffer.clear()
                 continue
 
-            if self.count_voiced_frames_from_buffer_percentage(buffer) >= self.vad_tolerance:
+            if self.count_buffer_frames_percentage(buffer, is_speech=True) >= self.vad_tolerance:
                 is_detecting_voice = True
                 for f, _ in buffer:
                     yield f.data
@@ -137,13 +155,13 @@ class SpeechToText:
         timestamp: float = 0.0
         leftover_from_last_audio_data: bytes = b""
 
-        async for packet in microphone_queue:
+        async for packet in self.queue:
             if packet.is_empty():
                 yield AudioFrame.EMPTY()
                 continue
 
             offset: int = 0
-            audio_data = leftover_from_last_audio_data + packet._data
+            audio_data = leftover_from_last_audio_data + self.reduce_audio_noise(packet.data)
 
             while True:
                 if offset + frame_data_length > len(audio_data):
@@ -154,18 +172,29 @@ class SpeechToText:
                 timestamp += duration
                 offset += frame_data_length
 
-            microphone_queue.task_done()
+            self.queue.task_done()
 
-    def count_voiced_frames_from_buffer_percentage(self, buffer) -> float:
-        return len([f for f, is_speech in buffer if is_speech]) / buffer.maxlen
+    def reduce_audio_noise(self, data: bytes) -> bytes:
+        np_data = np.frombuffer(data, np.int16) / 1.0
+        reduced_noise_data = reduce_noise(audio_clip=np_data, noise_clip=self.noise_sample_data)
+        return reduced_noise_data.astype(np.int16).tobytes()
 
-    def store_audio_data(self, data: bytes, chunk_name="") -> None:
+    def load_noise_sample_data(self) -> np.ndarray:
+        path = os.path.join(os.path.dirname(__file__), "../../assets/deepspeech/noise_sample.wav")
+        with wave.open(path, "rb") as wf:
+            frames = wf.getnframes()
+            return np.frombuffer(wf.readframes(frames), np.int16) / 1.0
+
+    def count_buffer_frames_percentage(self, buffer, is_speech: bool) -> float:
+        return len([f for f, s in buffer if s == is_speech]) / buffer.maxlen
+
+    def store_audio_data(self, data: Union[np.ndarray, bytes], chunk_name="") -> None:
         if not self.output_file_name:
             return
 
         path = self.output_file_name + ("" if not chunk_name else "_" + chunk_name) + ".raw"
         with open(path, "ab") as raw_file:
-            raw_file.write(data)
+            raw_file.write(data.tobytes() if isinstance(data, np.ndarray) else data)
 
     def store_audio_transcript(self, text: str) -> None:
         if not self.output_file_name:

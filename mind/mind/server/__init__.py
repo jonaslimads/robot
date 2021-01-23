@@ -1,7 +1,7 @@
-# from mind.server.handlers.CameraHandlers import CameraOutputHandler, CameraWebSocketHandler
-# from mind.server.handlers.LogWebSocketHandler import LogWebSocketHandler
-# from mind.server.handlers.MicrophoneWebSocketHandler import MicrophoneWebSocketHandler
-# from mind.server.handlers.MqttWebHandler import MqttWebHandler
+# from mind.server.CameraHandlers import CameraOutputHandler, CameraWebSocketHandler
+# from mind.server.LogWebSocketHandler import LogWebSocketHandler
+# from mind.server.MicrophoneWebSocketHandler import MicrophoneWebSocketHandler
+# from mind.server.MqttWebHandler import MqttWebHandler
 
 # INPUT: from boards to server
 # OUTPUT: from server
@@ -24,16 +24,3 @@
 #
 # Data stream from server to users (browser, home assistant etc.)
 # GET http://<ip>/<peripheral>
-
-
-from mind.server.handlers.BoardWebSocketHandler import BoardWebSocketHandler
-from mind.server.handlers.CameraWebHandler import CameraWebHandler
-from mind.server.handlers.MqttWebHandler import MqttWebHandler
-
-routes = [
-    # (r"/(?P<board>[A-Za-z]+)", TestBoardWebSocketHandler),
-    (r"/ws/(?P<board>[A-Za-z]+)", BoardWebSocketHandler),
-    (r"/camera", CameraWebHandler),
-    (r"/command", MqttWebHandler),
-    # (r"/microphone", MicrophoneWebHandler),
-]

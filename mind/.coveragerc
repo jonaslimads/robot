@@ -6,7 +6,7 @@ source = mind
 
 [paths]
 source =
-    src/
+    ./
     */site-packages/
 
 [report]

@@ -23,6 +23,7 @@ TODO
 ### Hearing
 - [x] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
 - [x] Stream audio
+- [ ] Remove noise and cleanup audio
 - [x] Process audio for voice recognition
 - [ ] Add a Chatbot
 

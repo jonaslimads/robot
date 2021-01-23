@@ -2,10 +2,7 @@
 *.idea
 *.iml
 
-# tmp:
-ai/
-old/
-assets/
+.ropeproject/
 
 *.pyc
 i2s.raw
