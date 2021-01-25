@@ -3,14 +3,14 @@ import signal
 import asyncio
 from functools import partial
 from typing import List, Any
+from concurrent import futures
 
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.log
 
-from mind import __version__, get_logger, routes
-from mind.messaging import publisher
+from mind import __version__, get_logger, routes, start_tasks, stop_tasks
 from mind.signal import signal_handler
 
 logger = get_logger(__name__)
@@ -26,14 +26,12 @@ def make_app(port: int):
     server = tornado.httpserver.HTTPServer(app)
     server.listen(port)
 
-    signal.signal(signal.SIGTERM, partial(signal_handler, server))
-    signal.signal(signal.SIGINT, partial(signal_handler, server))
+    signal.signal(signal.SIGTERM, partial(signal_handler, server, stop_tasks))
+    signal.signal(signal.SIGINT, partial(signal_handler, server, stop_tasks))
 
     io_loop = tornado.ioloop.IOLoop.current()
-    publisher.spawn_listeners()
+    start_tasks(io_loop)
     io_loop.start()
-
-    logger.info("Bye")
 
     return app
 

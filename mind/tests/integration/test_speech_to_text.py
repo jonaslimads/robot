@@ -20,7 +20,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.testing import AsyncTestCase, gen_test, main
 
 from app import make_app
-from mind import get_logger
+from mind.logging import get_logger
 from mind.messaging import publisher
 from mind.models import Text
 from mind.ai.chatbot import ChatBot
@@ -55,10 +55,13 @@ class TestSpeechToText(AsyncTestCase):
                 "paris sufficient i said",
                 "your paris sufficient i said",
                 "your parents sufficient i said",
+                "power is sufficient i said",
             ]
         ]
         self._test_stream_audio_and_assert_transcript("deepspeech-0.9.3-audio/8455-210777-0068.wav", True, expected_transcripts)
-        # self._test_stream_audio_and_assert_transcript("../../../../scripts/noise_reduction/reduced_noise_audio_sample.raw", True, expected_transcripts)
+        # self._test_stream_audio_and_assert_transcript(
+        #     "../../../../scripts/noise_reduction/reduced_noise_audio_sample.raw", True, expected_transcripts
+        # )
         # self._test_stream_audio_and_assert_transcript(
         #     "../../../../scripts/noise_reduction/noisy_audio_sample.raw", True, expected_transcripts
         # )
@@ -72,8 +75,8 @@ class TestSpeechToText(AsyncTestCase):
             actual_transcripts.append(self.queue.get_nowait())
             self.queue.task_done()
 
-        # logger.debug(f"Expected: {expected_transcripts}")
-        # logger.debug(f"Actual: {actual_transcripts}")
+        logger.debug(f"Expected: {expected_transcripts}")
+        logger.debug(f"Actual: {actual_transcripts}")
 
         # The audio transcriber is not perfect and it can bring different values,
         # so the assertion is done against a list of possible values.

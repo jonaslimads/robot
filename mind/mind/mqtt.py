@@ -2,7 +2,7 @@ import os
 
 import paho.mqtt.client as mqtt
 
-from mind import get_logger
+from mind.logging import get_logger
 
 
 class MqttClient:

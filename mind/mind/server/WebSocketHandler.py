@@ -1,7 +1,7 @@
 from typing import List, Union
 from tornado import websocket
 
-from mind import get_logger
+from mind.logging import get_logger
 from mind.models import Message
 
 logger = get_logger(__name__)
@@ -24,6 +24,7 @@ class WebSocketHandler(websocket.WebSocketHandler):
 
     def reply_clients(self, data: Union[bytes, str]) -> None:
         for client in self.clients:
+            logger.info(f"{client} {str(data)}")
             WebSocketHandler.reply_client(client, data)
 
     def reply_client(client: websocket.WebSocketHandler, data: Union[bytes, str]) -> None:

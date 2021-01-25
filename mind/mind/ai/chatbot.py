@@ -1,12 +1,15 @@
 import os
 
-from chatterbot import ChatBot as ChatBotInstance
+from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
-from tornado.queues import Queue, QueueFull
+from queue import Queue, Empty
 
 from mind.config import chatbot_name, chatbot_params, chatbot_language
-from mind.messaging import Listener
+from mind.logging import get_logger
+from mind.messaging import Listener, Task
 from mind.models import Text
+
+logger = get_logger(__name__)
 
 db_path = os.path.join(os.path.dirname(__file__), f"../../models/chatterbot/{chatbot_language}.db")
 
@@ -18,29 +21,32 @@ class ChatBotListener(Listener):
     def enqueue(self, text: Text) -> None:
         super().enqueue(text)
 
-    async def listen(self):
-        await ChatBot(self.queue).process_texts()
 
+class ChatBotTask(Task):
 
-class ChatBot:
+    running = False
 
-    queue: Queue
-
-    chatbot: ChatBotInstance
-
-    def __init__(self, queue: Queue):
-        self.queue = queue
-        self.chatbot = ChatBotInstance(
+    def __init__(self):
+        self.chatbot = ChatBot(
             chatbot_name,
             logger=get_logger(__name__),
             database_uri=f"sqlite:///{os.path.abspath(db_path)}",
             **chatbot_params,
         )
 
-    async def process_texts(self):
-        pass
-        # async for text in self.queue:
-        #     logger.warning(text)
+    def run(self):
+        while self.running:
+            try:
+                text = ChatBotListener.queue.get(timeout=2)
+                self.process_text(text)
+                ChatBotListener.queue.task_done()
+            except Empty:
+                continue
+
+    def process_text(self, text: Text):
+        if not text.value:
+            return
+        # logger.info(f"--> Processing {text}")
 
 
 def train_chatterbot_corpus():
@@ -55,9 +61,3 @@ def train_chatterbot_corpus():
 
     response = _chatbot.get_response("How are you doing today?")
     print(response)
-
-
-# to prevent circular import
-from mind import get_logger
-
-logger = get_logger(__name__)

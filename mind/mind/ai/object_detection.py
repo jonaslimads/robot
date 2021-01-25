@@ -10,16 +10,13 @@ from mind.messaging import Listener
 from mind.models import Packet, Device
 
 
-class ObjectDetectionListener(Listener):
+# class ObjectDetectionListener(Listener):
 
-    queue: Queue = Queue(maxsize=20)
+#     queue: Queue = Queue(maxsize=20)
 
-    def enqueue(self, packet: Packet) -> None:
-        if packet.device.type == Device.Type.MICROPHONE:
-            super().enqueue(packet)
-
-    async def listen(self):
-        await ObjectDetection(self.queue).process_voiced_audio()
+#     def enqueue(self, packet: Packet) -> None:
+#         if packet.device.type == Device.Type.MICROPHONE:
+#             super().enqueue(packet)
 
 
 class ObjectDetection:

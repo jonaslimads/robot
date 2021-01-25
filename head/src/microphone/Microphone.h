@@ -44,7 +44,7 @@ private:
             .dma_buf_count = 4,
             .dma_buf_len = 1024,
             .use_apll = false,
-            .tx_desc_auto_clear = false,
+            .tx_desc_auto_clear = true,
             .fixed_mclk = 0};
     
     i2s_pin_config_t i2sPins = {

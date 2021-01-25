@@ -15,12 +15,12 @@ import asyncio
 
 import tornado.ioloop
 
-from mind import get_logger
+from mind.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def signal_handler(server, sig, frame):
+def signal_handler(server, stop_tasks, sig, frame):
     io_loop = tornado.ioloop.IOLoop.instance()
 
     def stop_loop(server, deadline):
@@ -40,7 +40,7 @@ def signal_handler(server, sig, frame):
             logger.info(f"Continuing with {pending_connection} connections open.")
             logger.info("Stopping IOLoop")
             io_loop.stop()
-            logger.info("Shutdown complete.")
+            logger.info("Shutdown complete. Bye")
 
     def shutdown():
         max_wait_seconds_before_shutdown = 3
@@ -48,6 +48,7 @@ def signal_handler(server, sig, frame):
         logger.info(f"Will shutdown in {max_wait_seconds_before_shutdown} seconds ...")
         try:
             stop_loop(server, time.time() + max_wait_seconds_before_shutdown)
+            stop_tasks()
         except BaseException as e:
             logger.info(f"Error trying to shutdown Tornado: {str(e)}")
 

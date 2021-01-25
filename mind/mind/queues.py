@@ -6,7 +6,7 @@ Local queues should be defined within their classes/modules.
 
 from tornado.queues import Queue, QueueFull
 
-from mind import get_logger
+from mind.logging import get_logger
 from mind.models import Device, Packet
 
 
