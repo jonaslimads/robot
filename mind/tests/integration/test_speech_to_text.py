@@ -21,7 +21,7 @@ from tornado.testing import AsyncTestCase, gen_test, main
 
 from app import make_app
 from mind.logging import get_logger
-from mind.messaging import publisher
+from mind.messaging import publish_message
 from mind.models import Text
 from mind.ai.chatbot import ChatBot
 

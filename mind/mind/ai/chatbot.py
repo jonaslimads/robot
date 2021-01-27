@@ -2,11 +2,10 @@ import os
 
 from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
-from queue import Queue, Empty
 
 from mind.config import chatbot_name, chatbot_params, chatbot_language
 from mind.logging import get_logger
-from mind.messaging import Listener, Task
+from mind.messaging import Listener, Task, Queue, EmptyQueueError
 from mind.models import Text
 
 logger = get_logger(__name__)
@@ -14,15 +13,9 @@ logger = get_logger(__name__)
 db_path = os.path.join(os.path.dirname(__file__), f"../../models/chatterbot/{chatbot_language}.db")
 
 
-class ChatBotListener(Listener):
+class ChatBotListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=20)
-
-    def enqueue(self, text: Text) -> None:
-        super().enqueue(text)
-
-
-class ChatBotTask(Task):
 
     running = False
 
@@ -34,13 +27,16 @@ class ChatBotTask(Task):
             **chatbot_params,
         )
 
+    def enqueue(self, text: Text) -> None:
+        super().enqueue(text)
+
     def run(self):
         while self.running:
             try:
-                text = ChatBotListener.queue.get(timeout=2)
+                text = self.queue.get(timeout=2)
                 self.process_text(text)
-                ChatBotListener.queue.task_done()
-            except Empty:
+                self.queue.task_done()
+            except EmptyQueueError:
                 continue
 
     def process_text(self, text: Text):

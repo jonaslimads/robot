@@ -1,12 +1,11 @@
 from math import sqrt
-from queue import Queue, Empty
 
 import numpy as np
 import pyaudio
 
-from mind.ai import SpeechToTextTask
+from mind.ai.speech_to_text import SpeechToTextListenerTask
 from mind.logging import get_logger
-from mind.messaging import Listener, Task, publisher
+from mind.messaging import Listener, Task, publish_message
 from mind.models import Packet
 
 logger = get_logger(__name__)
@@ -15,9 +14,11 @@ logger = get_logger(__name__)
 class MicrophoneStreamTask(Task):
     running = False
 
-    frames_per_buffer = int((SpeechToTextTask.sample_rate / 1000) * 1024)  # half of 32768
+    # frames_per_buffer = int((SpeechToTextTask.sample_rate / 1000) * 1024)  # half of 32768
 
-    sound_level = 2
+    frames_per_buffer = int(SpeechToTextListenerTask.sample_rate / 50)
+
+    sound_level = 1.2
 
     def run(self):
         packet_metadata = b'{"device":{"id":"M0","type":"MICROPHONE","params":{}}}\r\n'
@@ -26,7 +27,7 @@ class MicrophoneStreamTask(Task):
         stream = audio.open(
             format=pyaudio.paInt16,
             channels=1,
-            rate=SpeechToTextTask.sample_rate,
+            rate=SpeechToTextListenerTask.sample_rate,
             input=True,
             frames_per_buffer=self.frames_per_buffer,
         )
@@ -41,7 +42,7 @@ class MicrophoneStreamTask(Task):
             finally:
                 output_data = self.process_audio_data(input_data)
                 packet = Packet.from_bytes(packet_metadata + output_data)
-                publisher.publish(packet)
+                publish_message(packet)
 
         stream.stop_stream()
         stream.close()
@@ -53,4 +54,4 @@ class MicrophoneStreamTask(Task):
         return np.asarray(output_data, dtype=np.int16).tobytes()
 
 
-microphone_stream_task = MicrophoneStreamTask()
+# microphone_stream_task = MicrophoneStreamTask()

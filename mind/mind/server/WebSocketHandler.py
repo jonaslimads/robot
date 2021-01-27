@@ -22,9 +22,9 @@ class WebSocketHandler(websocket.WebSocketHandler):
     def check_origin(self, origin) -> bool:
         return True
 
-    def reply_clients(self, data: Union[bytes, str]) -> None:
-        for client in self.clients:
-            logger.info(f"{client} {str(data)}")
+    @classmethod
+    def reply_clients(cls, data: Union[bytes, str]) -> None:
+        for client in cls.clients:
             WebSocketHandler.reply_client(client, data)
 
     def reply_client(client: websocket.WebSocketHandler, data: Union[bytes, str]) -> None:

@@ -4,10 +4,9 @@ from tornado import web, escape
 from tornado.ioloop import IOLoop
 
 from mind.logging import get_logger
+from mind.devices.microphone import MicrophoneStreamTask
 from mind.mqtt import MqttClient
-from mind.devices.microphone import microphone_stream_task
-
-# from mind.ai.speech_to_text import microphone_stream
+from mind.messaging import start_task, stop_task
 
 client = MqttClient()
 
@@ -30,12 +29,12 @@ class MqttWebHandler(web.RequestHandler):
 
         if command == "START_MICROPHONE":
             logger.info(f"Started microphone stream")
-            microphone_stream_task.start()
+            start_task(MicrophoneStreamTask)
             return
 
         if command == "STOP_MICROPHONE":
             logger.info(f"Stopped microphone stream")
-            microphone_stream_task.stop()
+            stop_task(MicrophoneStreamTask)
             return
 
         client.publish(message=command)

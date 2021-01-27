@@ -9,7 +9,7 @@ from tornado.testing import AsyncTestCase, gen_test, main
 
 from app import make_app
 from mind.logging import get_logger
-from mind.messaging import publisher
+from mind.messaging import publish_message
 from mind.models import Text
 from mind.ai.chatbot import ChatBot
 
@@ -19,9 +19,8 @@ class TestChatBot(AsyncTestCase):
 
     @gen_test
     def test_http_fetch(self):
-        publisher.spawn_listeners()
         # client = AsyncHTTPClient(self.io_loop)
-        publisher.publish(Text("Hello, how are you?"))
+        publish_message(Text("Hello, how are you?"))
 
 
 # sys.path[0] = os.path.join(os.path.dirname(__file__), "../../src")
@@ -29,7 +28,7 @@ class TestChatBot(AsyncTestCase):
 
 
 # def test_chatbot_via_publisher():
-#     publisher.publish(Text("Hello, how are you?"))
+#     publish_message(Text("Hello, how are you?"))
 
 
 # def test_get_chatbot_response_from_mock():
