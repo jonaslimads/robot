@@ -10,28 +10,33 @@ from mind.messaging import registry
 from mind.models import Packet, Text
 from mind.ai.chatbot import ChatBotListenerTask
 from mind.ai.speech_to_text import SpeechToTextListenerTask
+from mind.ai.text_to_speech import TextToSpeechListenerTask
 from mind.devices.microphone import MicrophoneStreamTask
 from mind.server.BoardWebSocketHandler import BoardWebSocketHandler, BoardWebSocketHandlerTaskListener
 from mind.server.CameraWebHandler import CameraWebHandler
 from mind.server.MqttWebHandler import MqttWebHandler
 
 
-registry.register_tasks(
-    [
-        (ChatBotListenerTask, True),
-        (SpeechToTextListenerTask, True),
-        (BoardWebSocketHandlerTaskListener, True),
-        (MicrophoneStreamTask, False),
-    ]
-)
+def setup_registry():
+    registry.register_tasks(
+        [
+            (ChatBotListenerTask, True),
+            (SpeechToTextListenerTask, True),
+            (TextToSpeechListenerTask, True),
+            (BoardWebSocketHandlerTaskListener, True),
+            (MicrophoneStreamTask, False),
+        ]
+    )
 
-registry.register_listeners(
-    [
-        (SpeechToTextListenerTask, [Packet]),
-        (ChatBotListenerTask, [Text]),
-        (BoardWebSocketHandlerTaskListener, [Text]),
-    ]
-)
+    registry.register_listeners(
+        [
+            (ChatBotListenerTask, [Text]),
+            (SpeechToTextListenerTask, [Packet]),
+            (TextToSpeechListenerTask, [Text]),
+            (BoardWebSocketHandlerTaskListener, [Text]),
+        ]
+    )
+
 
 routes: Optional[_RuleList] = [
     (

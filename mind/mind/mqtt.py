@@ -41,4 +41,4 @@ class MqttClient:
 
         self.client.subscribe(self.topic_log)
         self.client.on_message = on_message
-        self.logger.info(f"Subscribed to {self.topic_log}")
+        # self.logger.info(f"Subscribed to {self.topic_log}")

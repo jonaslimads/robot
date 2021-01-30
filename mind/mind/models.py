@@ -1,8 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
 import json
-from typing import List, Optional
+from typing import List, Optional, Type
 from enum import Enum
 
 import attr, cattr
@@ -46,7 +46,10 @@ class BaseModel(ABC):
 
 class Message(BaseModel):
 
-    ignore_middleware: List[str] = []  # = attr.ib(default=list(), validator=attr.validators.instance_of(list))
+    # Prevent circular enqueue of a message. Example:
+    #   ChatBot's listens for Text, then it enqueues a new Text as of result of processing.
+    #   If we don't check for circular enqueue, chatbot will listen for its own produced Text.
+    _stack: List[Type]
 
 
 @attr.s(auto_attribs=True)
@@ -94,7 +97,7 @@ class Packet(Message):
 
     data: bytes = attr.ib(default=b"")
 
-    ignore_middleware: List[str] = attr.ib(default=list(), validator=attr.validators.instance_of(list))
+    _stack: List[Type] = attr.ib(init=False, factory=list)
 
     def to_bytes(self, *args, **kwargs) -> bytes:
         payload = {"device": self.device.to_dict()}
@@ -132,5 +135,7 @@ class Text(Message):
 
     value: str = attr.ib(validator=attr.validators.instance_of(str))
 
+    _stack: List[Type] = attr.ib(init=False, factory=list)
+
     def __str__(self):
-        return f"Text(value={self.value})"
+        return f"Text(value={self.value}) from {self._stack}"

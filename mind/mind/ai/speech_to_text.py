@@ -59,7 +59,8 @@ class SpeechToTextListenerTask(Listener, Task):
 
     noise_sample_data: np.ndarray
 
-    def __init__(self, output_to_file=True):
+    def start(self, output_to_file=True):
+        super().start()
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
         self.deepspeech_model = self.load_deepspeech_model()
 
@@ -110,7 +111,7 @@ class SpeechToTextListenerTask(Listener, Task):
                 stream = self.deepspeech_model.createStream()
                 if text:
                     logger.debug(f"Transcript #{i}: {text}")
-                    publish_message(Text(text))
+                    publish_message(self, Text(text))
                 # else:
                 #     logger.debug(f"Transcript #{i} is empty!")
                 i += 1

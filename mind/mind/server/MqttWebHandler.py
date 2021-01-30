@@ -8,12 +8,12 @@ from mind.devices.microphone import MicrophoneStreamTask
 from mind.mqtt import MqttClient
 from mind.messaging import start_task, stop_task
 
-client = MqttClient()
-
 logger = get_logger(__name__)
 
 
 class MqttWebHandler(web.RequestHandler):
+    client = MqttClient()
+
     def set_default_headers(self) -> None:
         self.set_header("Content-Type", "application/json")
 
@@ -37,6 +37,6 @@ class MqttWebHandler(web.RequestHandler):
             stop_task(MicrophoneStreamTask)
             return
 
-        client.publish(message=command)
+        self.client.publish(message=command)
         logger.info(f"Sent command to boards/head: {command}")
         self.write(json.dumps({"ok": True}))

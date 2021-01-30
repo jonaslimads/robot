@@ -5,12 +5,10 @@ from chatterbot.trainers import ChatterBotCorpusTrainer
 
 from mind.config import chatbot_name, chatbot_params, chatbot_language
 from mind.logging import get_logger
-from mind.messaging import Listener, Task, Queue, EmptyQueueError
+from mind.messaging import Listener, Task, Queue, EmptyQueueError, publish_message
 from mind.models import Text
 
 logger = get_logger(__name__)
-
-db_path = os.path.join(os.path.dirname(__file__), f"../../models/chatterbot/{chatbot_language}.db")
 
 
 class ChatBotListenerTask(Listener, Task):
@@ -19,16 +17,15 @@ class ChatBotListenerTask(Listener, Task):
 
     running = False
 
-    def __init__(self):
+    chatbot: ChatBot
+
+    def start(self):
+        super().start()
         self.chatbot = ChatBot(
             chatbot_name,
-            logger=get_logger(__name__),
-            database_uri=f"sqlite:///{os.path.abspath(db_path)}",
+            logger=logger,
             **chatbot_params,
         )
-
-    def enqueue(self, text: Text) -> None:
-        super().enqueue(text)
 
     def run(self):
         while self.running:
@@ -42,13 +39,16 @@ class ChatBotListenerTask(Listener, Task):
     def process_text(self, text: Text):
         if not text.value:
             return
-        # logger.info(f"--> Processing {text}")
+        response = self.chatbot.get_response(text.value)
+        if response.text:
+            publish_message(self, Text(response.text))
 
 
 def train_chatterbot_corpus():
     _chatbot = ChatBot(
         chatbot_name,
-        database_uri=f"sqlite:///{os.path.abspath(db_path)}",
+        logger=logger,
+        **chatbot_params,
     )
 
     trainer = ChatterBotCorpusTrainer(_chatbot)

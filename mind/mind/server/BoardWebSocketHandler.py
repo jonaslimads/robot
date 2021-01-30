@@ -26,13 +26,11 @@ class BoardWebSocketHandler(WebSocketHandler):
     def on_message(self, message):
         # logger.verbose(f"Received from {packet.device.type} {len(message)} bytes")
         packet = Packet.from_bytes(message)
-        publish_message(packet)
+        publish_message(self, packet)
 
     def on_close(self):
         self.clients.remove(self)
         logger.info(f"`{self.board}` board connection closed")
-        # put_packet_to_queue(Packet.MICROPHONE_EMPTY_PACKET())
-        # put_packet_to_queue(Packet.CAMERA_EMPTY_PACKET())
 
 
 class BoardWebSocketHandlerTaskListener(Listener, Task):

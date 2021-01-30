@@ -11,7 +11,7 @@ import tornado.web
 import tornado.log
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 
-from mind import __version__, get_logger, routes, registry
+from mind import __version__, get_logger, routes, setup_registry, registry
 from mind.signal import signal_handler
 
 logger = get_logger(__name__)
@@ -19,10 +19,11 @@ logger = get_logger(__name__)
 
 def make_app(port: int):
     asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
-
     tornado.log.enable_pretty_logging()
 
     logger.info(f"Starting Robot's mind server at port {port}...")
+
+    setup_registry()
 
     app = tornado.web.Application(routes)
 

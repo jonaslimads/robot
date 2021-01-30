@@ -7,10 +7,13 @@ The [mind](mind/) will run on a server (such as your computer), which will feed 
 
 The software will be mostly set up via Docker, however OpenCV is easier to run on the bare metal machine plus it can make use of GPUs.     
 
-# Diagrams
+# Architecture
 
-## Process flow diagram
-TODO
+## Mind
+
+## Process Flow Diagram
+
+### Directory Structure
 
 ## Checklist
 
@@ -21,13 +24,15 @@ TODO
 - [ ] Connect more powerful camera to robot/PC for face detection and face/text recognition
 
 ### Hearing
-- [x] Connect a microphone such as **Module I2S Interface INMP441** to ESP32. **TODO**: provide arduino project later on
+- ~~[x] ~~Connect a microphone such as **Module I2S Interface INMP441** to ESP32.~~ This was done, but the INMP441 quality was not worth it for voice recognition, so it was disabled and [mind/mind/devices/microphone.py](microphone.py) implemented
 - [x] Stream audio
-- [ ] Remove noise and cleanup audio
-- [x] Process audio for voice recognition
-- [ ] Add a Chatbot
+- ~~[ ] Remove noise and cleanup audio~~ Tried to remove noise from INMP441, but the quality was not good
+- [x] Integrate with a speech-to-text solution. Done with [https://github.com/mozilla/DeepSpeech](Mozilla DeepSpeech)
+- [X] Integrate with a ChatBot. Done with [https://github.com/gunthercox/ChatterBot](ChatterBot)
+- [ ] Improve ChatBot with custom commands, behavior and phrases in general
 
 ### Speaking
+- [ ] Integrate with a text-to-speech solution. Done with [https://github.com/mozilla/TTS](Mozilla TTS)
 - [ ] Connect an audio amplifier. **TODO**: provide arduino project later on
 - [ ] Stream output audio from the server to ESP32. This audio will be an output i.e. from the Chatbot
 

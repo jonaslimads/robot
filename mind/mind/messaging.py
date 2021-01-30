@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent import futures
 from queue import Queue, Full as FullQueueError, Empty as EmptyQueueError
-from typing import Callable, Dict, List, Tuple, Type
+from typing import Callable, Dict, List, Tuple, Type, Union
 
 from tornado.concurrent import run_on_executor
 from tornado.ioloop import IOLoop
@@ -14,7 +14,9 @@ logger = get_logger(__name__)
 
 
 """
-This module has interfaces (Listener and Tasks) and a Registry that orchestrates Listeners and Tasks.
+This is an implementation of the [https://refactoring.guru/design-patterns/observer](Observer) design pattern.
+
+It has interfaces (Listener and Tasks) and a Registry that orchestrates Listeners and Tasks.
 """
 
 
@@ -31,7 +33,6 @@ class Listener(ABC):
     def queue(self) -> Queue:
         raise NotImplementedError
 
-    @abstractmethod
     def enqueue(self, message) -> None:
         try:
             self.queue.put_nowait(message)
@@ -84,9 +85,9 @@ class Task(ABC):
             logger.warning(e)
 
 
-class NotRegisteredTaskError(Exception):
-    def __init__(self, task_class: Type[Task]):
-        super().__init__(f"{task_class.__name__} was not registered")
+class NotRegisteredError(Exception):
+    def __init__(self, _class: Union[Type[Listener], Type[Task]]):
+        super().__init__(f"{_class.__name__} is not registered")
 
 
 class NoSubscribedListenerForMessageError(Exception):
@@ -110,10 +111,12 @@ class Registry:
 
     _subscriptions: Dict[Type[Message], List[Listener]] = {}
 
-    def publish_message(self, message: Message) -> None:
+    def publish_message(self, context: Union[Listener, Task], message: Message) -> None:
+        message._stack.append(context.__class__)
         try:
             for listener in self._subscriptions[type(message)]:
-                listener.enqueue(message)
+                if listener.__class__ not in message._stack:
+                    listener.enqueue(message)
         except KeyError:
             raise NoSubscribedListenerForMessageError(type(message))
 
@@ -121,7 +124,13 @@ class Registry:
         for task, _ in self._tasks:
             if task.__class__ == task_class:
                 return task
-        raise NotRegisteredTaskError(task_class)
+        raise NotRegisteredError(task_class)
+
+    def get_listener(self, listener_class: Type[Listener]) -> Listener:
+        for listener in self._listeners:
+            if listener.__class__ == listener_class:
+                return listener
+        raise NotRegisteredError(listener_class)
 
     def register_listeners(self, listener_class_message_classes_list: List[Tuple[Type[Listener], List[Type[Message]]]]) -> None:
         for listener_class, message_classes in listener_class_message_classes_list:

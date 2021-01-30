@@ -42,7 +42,7 @@ class MicrophoneStreamTask(Task):
             finally:
                 output_data = self.process_audio_data(input_data)
                 packet = Packet.from_bytes(packet_metadata + output_data)
-                publish_message(packet)
+                publish_message(self, packet)
 
         stream.stop_stream()
         stream.close()
