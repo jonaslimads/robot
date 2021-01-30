@@ -9,9 +9,12 @@ readonly MIND_VENV_DIRECTORY="${MIND_DIRECTORY}/.venv"
 readonly MIND_VENV_BIN_DIRECTORY="${MIND_VENV_DIRECTORY}/bin"
 readonly MIND_PYTHON="${MIND_VENV_BIN_DIRECTORY}/python"
 
+
+# You may need to install:
+# sudo apt-get install portaudio19-dev
+# sudo apt-get install espeak
+
 install() {
-  # uncomment if you do not have portaudio installed
-  # sudo apt-get install portaudio19-dev
 
   if [[ -d "${MIND_VENV_DIRECTORY}" ]]; then
     return

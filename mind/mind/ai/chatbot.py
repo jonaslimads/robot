@@ -19,8 +19,7 @@ class ChatBotListenerTask(Listener, Task):
 
     chatbot: ChatBot
 
-    def start(self):
-        super().start()
+    def __init__(self):
         self.chatbot = ChatBot(
             chatbot_name,
             logger=logger,

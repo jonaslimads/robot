@@ -59,8 +59,7 @@ class SpeechToTextListenerTask(Listener, Task):
 
     noise_sample_data: np.ndarray
 
-    def start(self, output_to_file=True):
-        super().start()
+    def __init__(self, output_to_file=True):
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
         self.deepspeech_model = self.load_deepspeech_model()
 

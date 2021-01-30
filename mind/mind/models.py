@@ -123,8 +123,12 @@ class Packet(Message):
         return Packet(Device("c0", Device.Type.CAMERA))
 
     @staticmethod
+    def MICROPHONE(data: bytes) -> "Packet":
+        return Packet(Device("m0", Device.Type.MICROPHONE), data)
+
+    @staticmethod
     def MICROPHONE_EMPTY_PACKET() -> "Packet":
-        return Packet(Device("m0", Device.Type.MICROPHONE))
+        return Packet.MICROPHONE(b"")
 
     def __str__(self):
         return f"Packet(device={self.device})"

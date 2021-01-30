@@ -29,9 +29,7 @@ logger = get_logger(__name__)
 # threading.excepthook = assert_excepts
 
 
-
 class TestChatBot(AsyncHTTPTestCase):
-
     class _Listener(Listener):
         queue: Queue = Queue(maxsize=5)
 
@@ -49,7 +47,10 @@ class TestChatBot(AsyncHTTPTestCase):
         def wait_for_result():
             text = TestChatBot._Listener.queue.get(timeout=2)
             TestChatBot._Listener.queue.task_done()
-            assert text.value in ["I am on the Internet.", "I am doing well.", ]
+            assert text.value in [
+                "I am on the Internet.",
+                "I am doing well.",
+            ]
             self.stop()
 
         t = Thread(target=wait_for_result, daemon=True)

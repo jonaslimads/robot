@@ -8,5 +8,5 @@ chatbot_language = os.getenv("ROBOT_LANGUAGE", "english").lower()
 
 chatbot_params: dict = dict(
     storage_adapter="chatterbot.storage.MongoDatabaseAdapter",
-    database_uri="mongodb://chatterbot:password@127.0.0.1:27017/chatterbot"
+    database_uri="mongodb://chatterbot:password@127.0.0.1:27017/chatterbot",
 )
