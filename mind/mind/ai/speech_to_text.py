@@ -70,9 +70,8 @@ class SpeechToTextListenerTask(Listener, Task):
         else:
             self.output_file_name = ""
 
-    def enqueue(self, packet: Packet) -> None:
-        if packet.device.type == Device.Type.MICROPHONE:
-            super().enqueue(packet)
+    def enqueue(self, audio_frame: AudioFrame) -> None:
+        super().enqueue(audio_frame)
 
     def load_deepspeech_model(self):
         model = os.path.join(self.deepspeech_models_folder, "deepspeech-0.9.3-models.pbmm")
@@ -100,7 +99,7 @@ class SpeechToTextListenerTask(Listener, Task):
         stream = self.deepspeech_model.createStream()
 
         i = 1
-        for _bytes in self.voiced_audio_generator():
+        for _bytes, src in self.voiced_audio_generator():
             if _bytes is not None:
                 stream.feedAudioContent(np.frombuffer(_bytes, np.int16))
                 self.store_audio_data(_bytes, "voiced")
@@ -110,7 +109,7 @@ class SpeechToTextListenerTask(Listener, Task):
                 stream = self.deepspeech_model.createStream()
                 if text:
                     logger.debug(f"Transcript #{i}: {text}")
-                    publish_message(self, Text(text))
+                    publish_message(self, Text(text), src)
                 # else:
                 #     logger.debug(f"Transcript #{i} is empty!")
                 i += 1
@@ -121,9 +120,8 @@ class SpeechToTextListenerTask(Listener, Task):
         is_detecting_voice = False
 
         for frame in self.audio_frame_generator():
-
             if frame.is_empty():
-                yield None
+                yield None, frame.src
                 buffer.clear()
                 continue
 
@@ -132,19 +130,19 @@ class SpeechToTextListenerTask(Listener, Task):
             # logger.debug(f"is speech: {is_speech}")
 
             if is_detecting_voice:
-                yield frame.data
+                yield frame.data, frame.src
                 buffer.append((frame, is_speech))
-                if self.count_buffer_frames_percentage(buffer, is_speech=False) > 0.75:  # self.vad_tolerance:
+                if self.count_buffer_frames_percentage(buffer, is_speech=False) > self.vad_tolerance:
                     is_detecting_voice = False
-                    yield None
+                    yield None, frame.src
                     buffer.clear()
                 continue
 
             buffer.append((frame, is_speech))
-            if self.count_buffer_frames_percentage(buffer, is_speech=True) > 0.75:  # self.vad_tolerance:
+            if self.count_buffer_frames_percentage(buffer, is_speech=True) > self.vad_tolerance:
                 is_detecting_voice = True
                 for f, _ in buffer:
-                    yield f.data
+                    yield f.data, frame.src
                 buffer.clear()
 
     def audio_frame_generator(self):
@@ -153,13 +151,13 @@ class SpeechToTextListenerTask(Listener, Task):
         timestamp: float = 0.0
         leftover_from_last_audio_data: bytes = b""
 
-        for packet in self.preprocessed_audio_generator():
-            if packet.is_empty():
-                yield AudioFrame.EMPTY()
+        for audio_frame in self.preprocessed_audio_generator():
+            if audio_frame.is_empty():
+                yield AudioFrame.EMPTY().append_src(audio_frame.src)
                 continue
 
-            self.store_audio_data(packet.data)
-            audio_data = leftover_from_last_audio_data + packet.data
+            self.store_audio_data(audio_frame.data)
+            audio_data = leftover_from_last_audio_data + audio_frame.data
 
             offset: int = 0
             while True:
@@ -167,16 +165,16 @@ class SpeechToTextListenerTask(Listener, Task):
                     leftover_from_last_audio_data = audio_data[offset:]
                     break
 
-                yield AudioFrame(audio_data[offset : offset + frame_data_length], timestamp, duration)
+                yield AudioFrame(audio_data[offset : offset + frame_data_length], timestamp, duration).append_src(audio_frame.src)
                 timestamp += duration
                 offset += frame_data_length
 
     def preprocessed_audio_generator(self):
         while self.running:
             try:
-                packet = self.queue.get(timeout=2)
-                # logger.debug(f"Got packet {len(packet.data)}")
-                yield packet
+                audio_frame = self.queue.get(timeout=2)
+                # logger.debug(f"Got audio_frame {len(audio_frame.data)} {audio_frame.src}")
+                yield audio_frame
                 self.queue.task_done()
             except EmptyQueueError:
                 continue

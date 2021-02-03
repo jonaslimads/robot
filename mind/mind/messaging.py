@@ -111,14 +111,9 @@ class Registry:
 
     _subscriptions: Dict[Type[Message], List[Listener]] = {}
 
-    def publish_message(self, context: Union[Listener, Task], message: Message) -> None:
-        message._stack.append(context.__class__)
-        try:
-            for listener in self._subscriptions[type(message)]:
-                if listener.__class__ not in message._stack:
-                    listener.enqueue(message)
-        except KeyError:
-            raise NoSubscribedListenerForMessageError(type(message))
+    def publish_message(self, context: Union[Listener, Task], message: Message, previous_src: List[Type] = []) -> None:
+        message.append_src(previous_src).append_src(context.__class__)
+        self._publish_message(message.append_src(previous_src).append_src(context.__class__))
 
     def get_task(self, task_class: Type[Task]) -> Task:
         for task, _ in self._tasks:
@@ -177,6 +172,20 @@ class Registry:
     def stop_tasks(self) -> None:
         for task, _ in self._tasks:
             task.stop()
+
+    def clean(self) -> None:
+        self.stop_tasks()
+        self._tasks = []
+        self._listeners = []
+        self._subscriptions = {}
+
+    def _publish_message(self, message: Message) -> None:
+        try:
+            for listener in self._subscriptions[type(message)]:
+                if listener.__class__ not in message.src:
+                    listener.enqueue(message)
+        except KeyError:
+            raise NoSubscribedListenerForMessageError(type(message))
 
     def _subscribe_listener_to_message_classes(self, listener: Listener, message_classes: List[Type[Message]]) -> None:
         for message_class in message_classes:

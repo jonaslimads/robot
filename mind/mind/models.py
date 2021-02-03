@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
 import json
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 from enum import Enum
 
 import attr, cattr
@@ -49,17 +49,46 @@ class Message(BaseModel):
     # Prevent circular enqueue of a message. Example:
     #   ChatBot's listens for Text, then it enqueues a new Text as of result of processing.
     #   If we don't check for circular enqueue, chatbot will listen for its own produced Text.
-    _stack: List[Type]
+    _src: List[Type]
+
+    @property
+    def src(self) -> List[Type]:
+        return self._src
+
+    def append_src(self, src: Union[Type, List[Type]]):
+        if not isinstance(src, list):
+            src = [src]
+        for s in src:
+            if s not in self._src:
+                self._src.append(s)
+        return self
 
 
 @attr.s(auto_attribs=True)
-class AudioFrame:
+class Text(Message):
 
-    data: bytes = attr.ib(validator=attr.validators.instance_of(bytes))
+    value: str = attr.ib(validator=attr.validators.instance_of(str))
 
-    timestamp: float = attr.ib(validator=attr.validators.instance_of(float))
+    _src: List[Type] = attr.ib(init=False, factory=list)
 
-    duration: float = attr.ib(validator=attr.validators.instance_of(float))
+    def __str__(self):
+        return f"Text(value={self.value}) from {self.src}"
+
+
+@attr.s(auto_attribs=True)
+class AudioFrame(Message):
+
+    data: bytes = attr.ib(default=b"", validator=attr.validators.instance_of(bytes))
+
+    timestamp: float = attr.ib(default=-1.0, validator=attr.validators.instance_of(float))
+
+    duration: float = attr.ib(default=-1.0, validator=attr.validators.instance_of(float))
+
+    sample_rate: int = attr.ib(default=16000)
+
+    channels: int = attr.ib(default=1)
+
+    _src: List[Type] = attr.ib(init=False, factory=list)
 
     def is_empty(self) -> bool:
         return self.data == b""
@@ -67,6 +96,9 @@ class AudioFrame:
     @staticmethod
     def EMPTY() -> "AudioFrame":
         return AudioFrame(b"", 0.0, 0.0)
+
+    def __str__(self):
+        return f"AudioFrame(len(data)={len(self.data)}, timestamp={self.timestamp}, duration={self.duration}, sample_rate={self.sample_rate}) from {self._src}"
 
 
 @attr.s(auto_attribs=True)
@@ -97,7 +129,7 @@ class Packet(Message):
 
     data: bytes = attr.ib(default=b"")
 
-    _stack: List[Type] = attr.ib(init=False, factory=list)
+    _src: List[Type] = attr.ib(init=False, factory=list)
 
     def to_bytes(self, *args, **kwargs) -> bytes:
         payload = {"device": self.device.to_dict()}
@@ -132,14 +164,3 @@ class Packet(Message):
 
     def __str__(self):
         return f"Packet(device={self.device})"
-
-
-@attr.s(auto_attribs=True)
-class Text(Message):
-
-    value: str = attr.ib(validator=attr.validators.instance_of(str))
-
-    _stack: List[Type] = attr.ib(init=False, factory=list)
-
-    def __str__(self):
-        return f"Text(value={self.value}) from {self._stack}"

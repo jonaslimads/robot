@@ -8,7 +8,7 @@ from TTS.utils.synthesizer import Synthesizer
 
 from mind.logging import get_logger
 from mind.messaging import Listener, Task, Queue, EmptyQueueError, publish_message
-from mind.models import Text, Packet
+from mind.models import AudioFrame, Text
 from mind.messaging import registry
 
 logger = get_logger(__name__)
@@ -50,16 +50,16 @@ class TextToSpeechListenerTask(Listener, Task):
             try:
                 text = self.queue.get(timeout=2)
                 if isinstance(text, Text):
-                    self.speak(text.value)
+                    self.speak(text)
                 self.queue.task_done()
             except EmptyQueueError:
                 continue
 
-    def speak(self, text: str) -> None:
-        if not text:
+    def speak(self, text: Text) -> None:
+        if not text.value:
             logger.warning("Cannot synthesize empty text")
-        data = self.synthesize(text)
-        publish_message(self, Packet.MICROPHONE(data))
+        data = self.synthesize(text.value)
+        publish_message(self, AudioFrame(data), text.src)
 
     def synthesize(self, text: str) -> bytes:
         """ TTS outputs a sample rate of 22050, so we must desample it to be able to consume it again """
@@ -80,5 +80,5 @@ class TextToSpeechListenerTask(Listener, Task):
     def store_audio_data(
         self, data: bytes, path: str = "/home/jonas/Projects/robot/mind/assets-old/output/tts/output.raw"
     ) -> None:
-        with open("/home/jonas/Projects/robot/mind/assets-old/output/tts/output.raw", "wb") as f:
+        with open(path, "wb") as f:
             f.write(data)
