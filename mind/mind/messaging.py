@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent import futures
 from queue import Queue, Full as FullQueueError, Empty as EmptyQueueError
-from typing import Callable, Dict, List, Tuple, Type, Union
+from typing import Callable, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 from tornado.concurrent import run_on_executor
 from tornado.ioloop import IOLoop
@@ -18,6 +18,22 @@ This is an implementation of the [https://refactoring.guru/design-patterns/obser
 
 It has interfaces (Listener and Tasks) and a Registry that orchestrates Listeners and Tasks.
 """
+
+
+ListenerClassMessageClassesList = List[Tuple[Type["Listener"], Union[Type["Message"], List[Type["Message"]]]]]
+
+
+TaskClassAutoStartList = List[Union[Type["Task"], Tuple[Type["Task"], bool]]]
+
+
+class NotRegisteredError(Exception):
+    def __init__(self, _class: Union[Type["Listener"], Type["Task"]]):
+        super().__init__(f"{_class.__name__} is not registered")
+
+
+class NoSubscribedListenerForMessageError(Exception):
+    def __init__(self, message_class: Type["Message"]):
+        super().__init__(f"No subscribed listeners for {message_class.__name__}")
 
 
 class Listener(ABC):
@@ -85,16 +101,6 @@ class Task(ABC):
             logger.warning(e)
 
 
-class NotRegisteredError(Exception):
-    def __init__(self, _class: Union[Type[Listener], Type[Task]]):
-        super().__init__(f"{_class.__name__} is not registered")
-
-
-class NoSubscribedListenerForMessageError(Exception):
-    def __init__(self, message_class: Type[Message]):
-        super().__init__(f"No subscribed listeners for {message_class.__name__}")
-
-
 class Registry:
     """
     Registry orchestrates the Messaging architecture, which is based on Observer design pattern.
@@ -127,8 +133,10 @@ class Registry:
                 return listener
         raise NotRegisteredError(listener_class)
 
-    def register_listeners(self, listener_class_message_classes_list: List[Tuple[Type[Listener], List[Type[Message]]]]) -> None:
+    def register_listeners(self, listener_class_message_classes_list: ListenerClassMessageClassesList) -> None:
         for listener_class, message_classes in listener_class_message_classes_list:
+            if not isinstance(message_classes, list):
+                message_classes = [message_classes]
             self.register_listener(listener_class, message_classes)
 
     def register_listener(self, listener_class: Type[Listener], message_classes: List[Type[Message]]) -> None:
@@ -147,11 +155,19 @@ class Registry:
         self._listeners.append(listener)
         self._subscribe_listener_to_message_classes(listener, message_classes)
 
-    def register_tasks(self, task_class_auto_start_list: List[Tuple[Type[Task], bool]]) -> None:
-        for task_class, auto_start in task_class_auto_start_list:
+    def register_tasks(self, task_class_auto_start_list: TaskClassAutoStartList) -> None:
+        for task_class_auto_start in task_class_auto_start_list:
+            task_class: Type[Task]
+            auto_start: bool
+            if isinstance(task_class_auto_start, tuple):
+                task_class = task_class_auto_start[0]
+                auto_start = task_class_auto_start[1]
+            else:
+                task_class = task_class_auto_start
+                auto_start = True
             self.register_task(task_class, auto_start)
 
-    def register_task(self, task_class: Type[Task], auto_start: bool) -> None:
+    def register_task(self, task_class: Type[Task], auto_start: bool = True) -> None:
         if task_class in [t[0].__class__ for t in self._tasks]:
             logger.warning(f"{task_class.__name__} is already registered")
             return

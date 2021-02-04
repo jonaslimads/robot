@@ -7,12 +7,12 @@ from tornado import ioloop
 
 from mind.logging import get_logger
 from mind.messaging import registry
-from mind.models import Packet, Text
+from mind.models import AudioFrame, Text
 from mind.ai.chatbot import ChatBotListenerTask
 from mind.ai.speech_to_text import SpeechToTextListenerTask
 from mind.ai.text_to_speech import TextToSpeechListenerTask
 from mind.devices.microphone import MicrophoneStreamTask
-from mind.server.BoardWebSocketHandler import BoardWebSocketHandler, BoardWebSocketHandlerTaskListener
+from mind.server.BoardWebSocketHandler import BoardWebSocketHandler, BoardWebSocketHandlerListenerTask
 from mind.server.CameraWebHandler import CameraWebHandler
 from mind.server.MqttWebHandler import MqttWebHandler
 
@@ -23,7 +23,7 @@ def setup_registry():
             (ChatBotListenerTask, True),
             (SpeechToTextListenerTask, True),
             (TextToSpeechListenerTask, True),
-            (BoardWebSocketHandlerTaskListener, True),
+            (BoardWebSocketHandlerListenerTask, True),
             (MicrophoneStreamTask, False),
         ]
     )
@@ -31,18 +31,15 @@ def setup_registry():
     registry.register_listeners(
         [
             (ChatBotListenerTask, [Text]),
-            (SpeechToTextListenerTask, [Packet]),
+            (SpeechToTextListenerTask, [AudioFrame]),
             (TextToSpeechListenerTask, [Text]),
-            (BoardWebSocketHandlerTaskListener, [Text]),
+            (BoardWebSocketHandlerListenerTask, [Text]),
         ]
     )
 
 
 routes: Optional[_RuleList] = [
-    (
-        r"/ws/(?P<board>[A-Za-z]+)",
-        BoardWebSocketHandler,
-    ),
+    (r"/ws/(?P<board>[A-Za-z]+)", BoardWebSocketHandler),
     (r"/camera", CameraWebHandler),
     (r"/command", MqttWebHandler),
 ]

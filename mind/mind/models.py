@@ -102,6 +102,24 @@ class AudioFrame(Message):
 
 
 @attr.s(auto_attribs=True)
+class VideoFrame(Message):
+
+    data: bytes = attr.ib(default=b"", validator=attr.validators.instance_of(bytes))
+
+    _src: List[Type] = attr.ib(init=False, factory=list)
+
+    def is_empty(self) -> bool:
+        return self.data == b""
+
+    @staticmethod
+    def EMPTY() -> "VideoFrame":
+        return VideoFrame(b"")
+
+    def __str__(self):
+        return f"VideoFrame(len(data)={len(self.data)}) from {self._src}"
+
+
+@attr.s(auto_attribs=True)
 class Device(BaseModel):
     class Type(Enum):
 

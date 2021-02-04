@@ -1,14 +1,10 @@
-from typing import List, Tuple, Type
+from typing import List
 
-from tornado import gen
 from tornado.testing import gen_test, main
 
-from tests.utils import BaseListenerTaskTest
 from mind.ai.speech_to_text import SpeechToTextListenerTask
 from mind.ai.text_to_speech import TextToSpeechListenerTask
-from mind.logging import get_logger
-from mind.messaging import registry, Listener, EmptyQueueError
-from mind.models import Message, Text, AudioFrame
+from tests.utils import get_logger, BaseListenerTaskTest, AudioFrame, Text
 
 
 logger = get_logger(__name__)
@@ -24,39 +20,33 @@ How this test works:
 
 class TestTextToSpeech(BaseListenerTaskTest):
 
-    task_class_auto_start_list = [(SpeechToTextListenerTask, True), (TextToSpeechListenerTask, True)]
+    task_class_auto_start_list = [SpeechToTextListenerTask, TextToSpeechListenerTask]
 
     @property
-    def listener_class_message_classes_list(self) -> List[Tuple[Type[Listener], List[Type[Message]]]]:
+    def listener_class_message_classes_list(self):
         return [
-            (SpeechToTextListenerTask, [AudioFrame]),
-            (TextToSpeechListenerTask, [Text]),
-            (TestTextToSpeech._Listener, [Text]),
+            (SpeechToTextListenerTask, AudioFrame),
+            (TextToSpeechListenerTask, Text),
+            (TestTextToSpeech._Listener, Text),
         ]
 
     @gen_test(timeout=10)
     async def test_text_to_speech_1(self):
-        registry.start_tasks()
+        self.start_tasks()
 
         input_text = "Save the planet from climate change! We have only this world to live."
         output_text = ["save the planet from climate change", "we have only this world to live"]
 
-        self._publish_message(Text(input_text))
+        self.publish_message(Text(input_text))
 
-        i = 0
-        while True:
-            try:
-                text = TestTextToSpeech._Listener.queue.get(timeout=2)
-                TestTextToSpeech._Listener.queue.task_done()
-                if SpeechToTextListenerTask in text.src:  # Ignore messages published by this test
-                    assert text.value == output_text[i]
-                    i += 1
-                if len(output_text) == i:
-                    break
-            except EmptyQueueError:
-                await gen.sleep(1)
+        def assert_output(text: Text, counter: dict):
+            if SpeechToTextListenerTask in text.src:  # Ignore messages published by this test
+                assert text.value == output_text[counter["i"]]
+                counter["i"] += 1
+            if len(output_text) == counter["i"]:
+                self.break_loop()
 
-        self.stop()
+        await self.consume_queue(assert_output, dict(i=0))
 
 
 if __name__ == "__main__":

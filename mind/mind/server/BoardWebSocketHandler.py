@@ -4,7 +4,8 @@ from tornado import websocket
 from tornado.ioloop import IOLoop
 
 from mind.logging import get_logger
-from mind.ai.object_detection import ObjectDetection
+
+# from mind.ai.object_detection import ObjectDetection
 from mind.messaging import publish_message, Listener, Task, Queue, EmptyQueueError
 from mind.models import Packet, Message, Text
 from mind.server.WebSocketHandler import WebSocketHandler
@@ -33,7 +34,7 @@ class BoardWebSocketHandler(WebSocketHandler):
         logger.info(f"`{self.board}` board connection closed")
 
 
-class BoardWebSocketHandlerTaskListener(Listener, Task):
+class BoardWebSocketHandlerListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=20)
 

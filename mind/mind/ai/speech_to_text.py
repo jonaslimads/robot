@@ -30,7 +30,7 @@ import webrtcvad
 
 from mind.logging import get_logger
 from mind.messaging import Listener, Task, publish_message, Queue, EmptyQueueError
-from mind.models import AudioFrame, Device, Message, Packet, Text
+from mind.models import AudioFrame, Message, Text
 
 
 logger = get_logger(__name__)

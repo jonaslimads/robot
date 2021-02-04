@@ -5,7 +5,8 @@ from tornado.web import RequestHandler
 
 from mind.logging import get_logger
 from mind.server.WebSocketHandler import WebSocketHandler
-from mind.ai.object_detection import ObjectDetection
+
+# from mind.ai.object_detection import ObjectDetection
 from mind.models import Packet
 
 logger = get_logger(__name__)

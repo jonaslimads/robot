@@ -1,16 +1,11 @@
 import os
-from typing import List, Tuple, Type
-
-from tornado import gen
-from tornado.testing import gen_test, main
+from typing import List
 import wave
 
-from tests.utils import BaseListenerTaskTest
+from tornado.testing import gen_test, main
 
 from mind.ai.speech_to_text import SpeechToTextListenerTask
-from mind.logging import get_logger
-from mind.messaging import registry, Listener, EmptyQueueError
-from mind.models import AudioFrame, Text, Message
+from tests.utils import get_logger, BaseListenerTaskTest, AudioFrame, Text
 
 
 logger = get_logger(__name__)
@@ -24,11 +19,11 @@ class TestSpeechToText(BaseListenerTaskTest):
 
     packet_timeout = 0.30  # roughly what the board takes to record and send an audio packet
 
-    task_class_auto_start_list = [(SpeechToTextListenerTask, True)]
+    task_class_auto_start_list = [SpeechToTextListenerTask]
 
     @property
-    def listener_class_message_classes_list(self) -> List[Tuple[Type[Listener], List[Type[Message]]]]:
-        return [(SpeechToTextListenerTask, [AudioFrame]), (TestSpeechToText._Listener, [Text])]
+    def listener_class_message_classes_list(self):
+        return [(SpeechToTextListenerTask, AudioFrame), (TestSpeechToText._Listener, Text)]
 
     @gen_test(timeout=10)
     async def test_speech_to_text_1(self):
@@ -53,28 +48,24 @@ class TestSpeechToText(BaseListenerTaskTest):
         await self._test_speech_to_text("deepspeech-0.9.3-audio/8455-210777-0068.wav", True, expected_possible_transcripts)
 
     async def _test_speech_to_text(self, wav_file: str, is_raw_audio: bool, expected_possible_transcripts: List[str]):
-        registry.start_tasks()
+        self.start_tasks()
 
         if is_raw_audio:
             self.publish_audio_frames_from_raw_file(os.path.join(self.audio_files_folder, wav_file))
         else:
             self.publish_audio_frames_from_wav_file(os.path.join(self.audio_files_folder, wav_file))
-        self._publish_message(AudioFrame.EMPTY())
+        self.publish_message(AudioFrame.EMPTY())
 
-        while True:
-            try:
-                actual_transcript = TestSpeechToText._Listener.queue.get(timeout=2).value
-                assert actual_transcript in expected_possible_transcripts
-                break
-            except EmptyQueueError:
-                await gen.sleep(1)
+        def assert_output(text: Text):
+            assert text.value in expected_possible_transcripts
+            self.break_loop()
 
-        self.stop()
+        await self.consume_queue(assert_output)
 
     def publish_audio_frames_from_raw_file(self, wav_file_path: str):
         with open(wav_file_path, "rb") as f:
             while (frame_data := f.read(self.buffer_size)) :
-                self._publish_message(AudioFrame(frame_data))
+                self.publish_message(AudioFrame(frame_data))
 
     def publish_audio_frames_from_wav_file(self, wav_file_path: str):
         offset = 0
@@ -82,7 +73,7 @@ class TestSpeechToText(BaseListenerTaskTest):
             frames = wf.getnframes()
             buffer = wf.readframes(frames)
             while offset + self.buffer_size < len(buffer):
-                self._publish_message(AudioFrame(buffer[offset : offset + self.buffer_size]))
+                self.publish_message(AudioFrame(buffer[offset : offset + self.buffer_size]))
                 offset += self.buffer_size
 
 
