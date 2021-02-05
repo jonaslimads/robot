@@ -36,7 +36,9 @@ class TextToSpeechListenerTask(Listener, Task):
     output_sample_rate = 16000
 
     # TODO move to local folder instead of system folder
-    def __init__(self):
+    def __init__(self, auto_start: bool = True):
+        super().__init__(auto_start)
+
         path = Path(__file__).parent / "../../.venv/lib/python3.8/site-packages/TTS/.models.json"
         manager = ModelManager(path)
 

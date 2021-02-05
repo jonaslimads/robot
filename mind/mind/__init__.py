@@ -20,20 +20,20 @@ from mind.server.MqttWebHandler import MqttWebHandler
 def setup_registry():
     registry.register_tasks(
         [
-            (ChatBotListenerTask, True),
-            (SpeechToTextListenerTask, True),
-            (TextToSpeechListenerTask, True),
-            (BoardWebSocketHandlerListenerTask, True),
-            (MicrophoneStreamTask, False),
+            ChatBotListenerTask,
+            SpeechToTextListenerTask,
+            TextToSpeechListenerTask,
+            BoardWebSocketHandlerListenerTask,
+            MicrophoneStreamTask,
         ]
     )
 
     registry.register_listeners(
         [
-            (ChatBotListenerTask, [Text]),
-            (SpeechToTextListenerTask, [AudioFrame]),
-            (TextToSpeechListenerTask, [Text]),
-            (BoardWebSocketHandlerListenerTask, [Text]),
+            (ChatBotListenerTask, Text),
+            (SpeechToTextListenerTask, AudioFrame),
+            (TextToSpeechListenerTask, Text),
+            (BoardWebSocketHandlerListenerTask, Text),
         ]
     )
 

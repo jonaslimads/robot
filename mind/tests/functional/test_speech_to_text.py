@@ -19,7 +19,7 @@ class TestSpeechToText(BaseListenerTaskTest):
 
     packet_timeout = 0.30  # roughly what the board takes to record and send an audio packet
 
-    task_class_auto_start_list = [SpeechToTextListenerTask]
+    task_class_auto_start_list = [(SpeechToTextListenerTask, (True, False))]
 
     @property
     def listener_class_message_classes_list(self):

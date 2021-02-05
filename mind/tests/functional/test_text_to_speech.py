@@ -20,13 +20,13 @@ How this test works:
 
 class TestTextToSpeech(BaseListenerTaskTest):
 
-    task_class_auto_start_list = [SpeechToTextListenerTask, TextToSpeechListenerTask]
+    task_class_auto_start_list = [TextToSpeechListenerTask, (SpeechToTextListenerTask, (True, False))]
 
     @property
     def listener_class_message_classes_list(self):
         return [
-            (SpeechToTextListenerTask, AudioFrame),
             (TextToSpeechListenerTask, Text),
+            (SpeechToTextListenerTask, AudioFrame),
             (TestTextToSpeech._Listener, Text),
         ]
 

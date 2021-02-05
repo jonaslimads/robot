@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent import futures
 from queue import Queue, Full as FullQueueError, Empty as EmptyQueueError
-from typing import Callable, Dict, List, Tuple, Type, Union, get_origin, get_args
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 from tornado.concurrent import run_on_executor
 from tornado.ioloop import IOLoop
@@ -23,7 +23,7 @@ It has interfaces (Listener and Tasks) and a Registry that orchestrates Listener
 ListenerClassMessageClassesList = List[Tuple[Type["Listener"], Union[Type["Message"], List[Type["Message"]]]]]
 
 
-TaskClassAutoStartList = List[Union[Type["Task"], Tuple[Type["Task"], bool]]]
+TaskClassArgsList = List[Union[Type["Task"], Tuple[Type["Task"], Tuple]]]
 
 
 class NotRegisteredError(Exception):
@@ -68,6 +68,9 @@ class Task(ABC):
 
     executor = futures.ThreadPoolExecutor(10)  # TODO check for this number
 
+    def __init__(self, auto_start: bool = True):
+        self.auto_start = auto_start
+
     @property
     @abstractmethod
     def running(self) -> bool:
@@ -111,7 +114,7 @@ class Registry:
     It also exposes a method to publish message directly to each subscribed listener's queue.
     """
 
-    _tasks: List[Tuple[Task, bool]] = []
+    _tasks: List[Task] = []
 
     _listeners: List[Listener] = []
 
@@ -122,7 +125,7 @@ class Registry:
         self._publish_message(message.append_src(previous_src).append_src(context.__class__))
 
     def get_task(self, task_class: Type[Task]) -> Task:
-        for task, _ in self._tasks:
+        for task in self._tasks:
             if task.__class__ == task_class:
                 return task
         raise NotRegisteredError(task_class)
@@ -145,7 +148,7 @@ class Registry:
             return
 
         # Task can also be implemented together with Listener
-        for task, _ in self._tasks:
+        for task in self._tasks:
             if isinstance(task, Listener) and task.__class__ == listener_class:
                 self._listeners.append(task)
                 self._subscribe_listener_to_message_classes(task, message_classes)
@@ -155,38 +158,43 @@ class Registry:
         self._listeners.append(listener)
         self._subscribe_listener_to_message_classes(listener, message_classes)
 
-    def register_tasks(self, task_class_auto_start_list: TaskClassAutoStartList) -> None:
-        for task_class_auto_start in task_class_auto_start_list:
-            task_class: Type[Task]
-            auto_start: bool
-            if isinstance(task_class_auto_start, tuple):
-                task_class = task_class_auto_start[0]
-                auto_start = task_class_auto_start[1]
-            else:
-                task_class = task_class_auto_start
-                auto_start = True
-            self.register_task(task_class, auto_start)
+    def register_tasks(self, task_class_args_list: TaskClassArgsList) -> None:
+        for task_class_args in task_class_args_list:
 
-    def register_task(self, task_class: Type[Task], auto_start: bool = True) -> None:
-        if task_class in [t[0].__class__ for t in self._tasks]:
+            task_class: Type[Task]
+            args: Tuple = tuple()
+
+            if isinstance(task_class_args, tuple):
+                task_class = task_class_args[0]
+                try:
+                    args = task_class_args[1]
+                except IndexError:
+                    pass
+            else:
+                task_class = task_class_args
+
+            self.register_task(task_class, *args)
+
+    def register_task(self, task_class: Type[Task], *args) -> None:
+        if task_class in [t.__class__ for t in self._tasks]:
             logger.warning(f"{task_class.__name__} is already registered")
             return
 
         # Listener can also be implemented together with Task
         for listener in self._listeners:
             if isinstance(listener, Task) and listener.__class__ == task_class:
-                self._tasks.append((listener, True))
+                self._tasks.append(listener)
                 return
 
-        self._tasks.append((task_class(), auto_start))
+        self._tasks.append(task_class(*args))
 
     def start_tasks(self) -> None:
-        for task, auto_start in self._tasks:
-            if auto_start:
+        for task in self._tasks:
+            if task.auto_start:
                 task.start()
 
     def stop_tasks(self) -> None:
-        for task, _ in self._tasks:
+        for task in self._tasks:
             task.stop()
 
     def clean(self) -> None:

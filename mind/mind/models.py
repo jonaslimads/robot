@@ -119,6 +119,7 @@ class VideoFrame(Message):
         return f"VideoFrame(len(data)={len(self.data)}) from {self._src}"
 
 
+# Deprecated
 @attr.s(auto_attribs=True)
 class Device(BaseModel):
     class Type(Enum):
@@ -137,6 +138,7 @@ class Device(BaseModel):
     params: dict = attr.ib(default=dict(), validator=attr.validators.instance_of(dict))
 
 
+# Deprecated
 @attr.s(auto_attribs=True)
 class Packet(Message):
     """

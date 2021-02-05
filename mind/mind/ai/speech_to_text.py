@@ -59,7 +59,9 @@ class SpeechToTextListenerTask(Listener, Task):
 
     noise_sample_data: np.ndarray
 
-    def __init__(self, output_to_file=True):
+    def __init__(self, auto_start: bool = True, output_to_file: bool = True):
+        super().__init__(auto_start)
+
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
         self.deepspeech_model = self.load_deepspeech_model()
 
@@ -69,9 +71,6 @@ class SpeechToTextListenerTask(Listener, Task):
             )
         else:
             self.output_file_name = ""
-
-    def enqueue(self, audio_frame: AudioFrame) -> None:
-        super().enqueue(audio_frame)
 
     def load_deepspeech_model(self):
         model = os.path.join(self.deepspeech_models_folder, "deepspeech-0.9.3-models.pbmm")
@@ -173,7 +172,6 @@ class SpeechToTextListenerTask(Listener, Task):
         while self.running:
             try:
                 audio_frame = self.queue.get(timeout=2)
-                # logger.debug(f"Got audio_frame {len(audio_frame.data)} {audio_frame.src}")
                 yield audio_frame
                 self.queue.task_done()
             except EmptyQueueError:

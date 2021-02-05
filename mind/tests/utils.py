@@ -15,7 +15,7 @@ from mind.messaging import (
     Task,
     EmptyQueueError,
     ListenerClassMessageClassesList,
-    TaskClassAutoStartList,
+    TaskClassArgsList,
 )
 from mind.models import Message, Text, AudioFrame, VideoFrame
 
@@ -30,7 +30,7 @@ class BreakLoopException(Exception):
 class BaseListenerTaskTest(AsyncHTTPTestCase):
     @property
     @abstractmethod
-    def task_class_auto_start_list(self) -> TaskClassAutoStartList:
+    def task_class_auto_start_list(self) -> TaskClassArgsList:
         raise NotImplementedError
 
     @property
@@ -39,7 +39,7 @@ class BaseListenerTaskTest(AsyncHTTPTestCase):
         raise NotImplementedError
 
     class _Listener(Listener):
-        queue: Queue = Queue(maxsize=5)
+        queue: Queue = Queue(maxsize=150)
 
     def get_app(self):
         asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())

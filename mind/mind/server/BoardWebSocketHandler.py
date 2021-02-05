@@ -7,7 +7,7 @@ from mind.logging import get_logger
 
 # from mind.ai.object_detection import ObjectDetection
 from mind.messaging import publish_message, Listener, Task, Queue, EmptyQueueError
-from mind.models import Packet, Message, Text
+from mind.models import Message, Text
 from mind.server.WebSocketHandler import WebSocketHandler
 
 
@@ -25,9 +25,7 @@ class BoardWebSocketHandler(WebSocketHandler):
         logger.info(f"New connection from `{self.board}` board")
 
     def on_message(self, message):
-        # logger.verbose(f"Received from {packet.device.type} {len(message)} bytes")
-        packet = Packet.from_bytes(message)
-        publish_message(self, packet)
+        logger.verbose(f"Received {len(message)} bytes")
 
     def on_close(self):
         self.clients.remove(self)

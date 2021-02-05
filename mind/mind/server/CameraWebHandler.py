@@ -7,7 +7,7 @@ from mind.logging import get_logger
 from mind.server.WebSocketHandler import WebSocketHandler
 
 # from mind.ai.object_detection import ObjectDetection
-from mind.models import Packet
+from mind.models import VideoFrame
 
 logger = get_logger(__name__)
 
