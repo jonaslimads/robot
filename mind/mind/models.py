@@ -5,11 +5,20 @@ import json
 from typing import List, Optional, Type, Union
 from enum import Enum
 
+from mind.logging import get_logger
+
 import attr, cattr
 
 cattr.register_structure_hook(datetime, lambda value, type: value)
 cattr.register_structure_hook(Decimal, lambda value, type: value)
 cattr.register_structure_hook(dict, lambda value, type: value)
+
+logger = get_logger(__name__)
+
+
+class NotFoundModel(Exception):
+    def __init__(self, metadata: str):
+        super().__init__(f"Model for {metadata} not found")
 
 
 class BaseModel(ABC):
@@ -62,6 +71,26 @@ class Message(BaseModel):
             if s not in self._src:
                 self._src.append(s)
         return self
+
+    @staticmethod
+    def from_bytes(data: bytes) -> Union["AudioFrame", "VideoFrame", None]:
+        delimiter_pos = data.find(b"\r\n")
+        if delimiter_pos == -1:
+            raise ValueError(f"Could not find message delimiter from\n:{str(data)}")
+
+        message_metadata = Message.decode(data[:delimiter_pos])
+        message_data = data[delimiter_pos + 2 :]
+
+        if "AudioFrame" in message_metadata:
+            return AudioFrame(message_data)
+
+        if "VideoFrame" in message_metadata:
+            return VideoFrame(message_data)
+
+        logger.warning(f"Model for {message_metadata} not found")
+
+        # raise NotFoundModel(message_metadata)
+        return None
 
 
 @attr.s(auto_attribs=True)
@@ -117,70 +146,3 @@ class VideoFrame(Message):
 
     def __str__(self):
         return f"VideoFrame(len(data)={len(self.data)}) from {self._src}"
-
-
-# Deprecated
-@attr.s(auto_attribs=True)
-class Device(BaseModel):
-    class Type(Enum):
-
-        MICROPHONE = "MICROPHONE"
-
-        CAMERA = "CAMERA"
-
-        def __str__(self):
-            return str(self.value)
-
-    id: str = attr.ib(validator=attr.validators.instance_of(str))
-
-    type: Type = attr.ib(validator=attr.validators.instance_of(Type))
-
-    params: dict = attr.ib(default=dict(), validator=attr.validators.instance_of(dict))
-
-
-# Deprecated
-@attr.s(auto_attribs=True)
-class Packet(Message):
-    """
-    a single packet transmitted between server and websockets.
-    """
-
-    device: Device
-
-    data: bytes = attr.ib(default=b"")
-
-    _src: List[Type] = attr.ib(init=False, factory=list)
-
-    def to_bytes(self, *args, **kwargs) -> bytes:
-        payload = {"device": self.device.to_dict()}
-
-        return Packet.encode(f"{Packet.as_json(payload)}\r\n", *args, **kwargs) + self.data
-
-    @classmethod
-    def from_bytes(cls, data: bytes, *args, **kwargs) -> "Packet":
-        delimiter_pos = data.find(b"\r\n")
-        if delimiter_pos == -1:
-            raise ValueError(f"Could not find packet delimiter from\n:{str(data)}")
-
-        packet = cls.from_json(cls.decode(data[:delimiter_pos]))
-        packet.data = data[delimiter_pos + 2 :]
-
-        return packet
-
-    def is_empty(self) -> bool:
-        return self.data == b""
-
-    @staticmethod
-    def CAMERA_EMPTY_PACKET() -> "Packet":
-        return Packet(Device("c0", Device.Type.CAMERA))
-
-    @staticmethod
-    def MICROPHONE(data: bytes) -> "Packet":
-        return Packet(Device("m0", Device.Type.MICROPHONE), data)
-
-    @staticmethod
-    def MICROPHONE_EMPTY_PACKET() -> "Packet":
-        return Packet.MICROPHONE(b"")
-
-    def __str__(self):
-        return f"Packet(device={self.device})"

@@ -28,6 +28,7 @@ import numpy as np
 from tornado.ioloop import IOLoop
 import webrtcvad
 
+from mind.ai.text_to_speech import TextToSpeechListenerTask
 from mind.logging import get_logger
 from mind.messaging import Listener, Task, publish_message, Queue, EmptyQueueError
 from mind.models import AudioFrame, Message, Text
@@ -39,8 +40,6 @@ logger = get_logger(__name__)
 class SpeechToTextListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=100)
-
-    running = False
 
     sample_rate = 16000
 
@@ -59,8 +58,9 @@ class SpeechToTextListenerTask(Listener, Task):
 
     noise_sample_data: np.ndarray
 
-    def __init__(self, auto_start: bool = True, output_to_file: bool = True):
+    def __init__(self, auto_start: bool = True, output_to_file: bool = True, ignore_text_to_speech_output: bool = True):
         super().__init__(auto_start)
+        self.ignore_text_to_speech_output = ignore_text_to_speech_output
 
         self.vad = webrtcvad.Vad(int(self.vad_aggressiveness))
         self.deepspeech_model = self.load_deepspeech_model()
@@ -71,6 +71,10 @@ class SpeechToTextListenerTask(Listener, Task):
             )
         else:
             self.output_file_name = ""
+
+    def enqueue(self, audio_frame: AudioFrame) -> None:
+        if not self.ignore_text_to_speech_output or TextToSpeechListenerTask not in audio_frame.src:
+            super().enqueue(audio_frame)
 
     def load_deepspeech_model(self):
         model = os.path.join(self.deepspeech_models_folder, "deepspeech-0.9.3-models.pbmm")

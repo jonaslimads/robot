@@ -6,7 +6,7 @@ from tornado.ioloop import IOLoop
 from mind.logging import get_logger
 
 # from mind.ai.object_detection import ObjectDetection
-from mind.messaging import publish_message, Listener, Task, Queue, EmptyQueueError
+from mind.messaging import publish_message, Listener, Task, Queue, EmptyQueueError, registry
 from mind.models import Message, Text
 from mind.server.WebSocketHandler import WebSocketHandler
 
@@ -24,8 +24,11 @@ class BoardWebSocketHandler(WebSocketHandler):
         self.board = kwargs.get("board", None)
         logger.info(f"New connection from `{self.board}` board")
 
-    def on_message(self, message):
-        logger.verbose(f"Received {len(message)} bytes")
+    def on_message(self, data):
+        logger.debug(f"Received {len(data)} bytes")
+        message = Message.from_bytes(data)
+        if message is not None:
+            publish_message(registry.get_task(BoardWebSocketHandlerListenerTask), message)
 
     def on_close(self):
         self.clients.remove(self)
@@ -39,8 +42,6 @@ class BoardWebSocketHandlerListenerTask(Listener, Task):
     # TODO filter enqueued messages
     def enqueue(self, message: Message) -> None:
         super().enqueue(message)
-
-    running = False
 
     def run(self):
         while self.running:

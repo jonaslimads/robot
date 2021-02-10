@@ -21,8 +21,6 @@ class TextToSpeechListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=20)
 
-    running = False
-
     model_name = "tts_models/en/ljspeech/tacotron2-DCA"
 
     vocoder_name = "vocoder_models/universal/libri-tts/fullband-melgan"

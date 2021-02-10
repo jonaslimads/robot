@@ -32,7 +32,7 @@ The software will be mostly set up via Docker, however OpenCV is easier to run o
 - [ ] Improve ChatBot with custom commands, behavior and phrases in general
 
 ### Speaking
-- [ ] Integrate with a text-to-speech solution. Done with [https://github.com/mozilla/TTS](Mozilla TTS)
+- [X] Integrate with a text-to-speech solution. Done with [https://github.com/mozilla/TTS](Mozilla TTS)
 - [ ] Connect an audio amplifier. **TODO**: provide arduino project later on
 - [ ] Stream output audio from the server to ESP32. This audio will be an output i.e. from the Chatbot
 

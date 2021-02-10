@@ -15,8 +15,6 @@ class ChatBotListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=20)
 
-    running = False
-
     chatbot: ChatBot
 
     def __init__(self, auto_start: bool = True):

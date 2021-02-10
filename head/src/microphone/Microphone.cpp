@@ -92,5 +92,6 @@ esp_err_t Microphone::stop() {
 
 // TODO: use some JSON library to make it dynamic, but for now it suffices
 char* Microphone::getPacketMetadata() {
-    return (char*)"{\"device\":{\"id\":\"M0\",\"type\":\"MICROPHONE\",\"params\":{}}}\r\n";
+    return (char*)"AudioFrame\r\n";
+    // return (char*)"{\"device\":{\"id\":\"M0\",\"type\":\"MICROPHONE\",\"params\":{}}}\r\n";
 }

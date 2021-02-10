@@ -70,11 +70,7 @@ class Task(ABC):
 
     def __init__(self, auto_start: bool = True):
         self.auto_start = auto_start
-
-    @property
-    @abstractmethod
-    def running(self) -> bool:
-        raise NotImplementedError
+        self.running = False
 
     @abstractmethod
     def run(self):

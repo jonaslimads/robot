@@ -149,5 +149,6 @@ esp_err_t Camera::takePhoto() {
 
 // TODO: use some JSON library to make it dynamic, but for now it suffices
 char* Camera::getPacketMetadata() {
-    return (char*)"{\"device\":{\"id\":\"C0\",\"type\":\"CAMERA\",\"params\":{}}}\r\n";
+    return (char*)"VideoFrame\r\n";
+    // return (char*)"{\"device\":{\"id\":\"C0\",\"type\":\"CAMERA\",\"params\":{}}}\r\n";
 }

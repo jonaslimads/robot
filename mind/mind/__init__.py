@@ -7,8 +7,9 @@ from tornado import ioloop
 
 from mind.logging import get_logger
 from mind.messaging import registry
-from mind.models import AudioFrame, Text
+from mind.models import AudioFrame, Text, VideoFrame
 from mind.ai.chatbot import ChatBotListenerTask
+from mind.ai.object_detection import ObjectDetectionListenerTask
 from mind.ai.speech_to_text import SpeechToTextListenerTask
 from mind.ai.text_to_speech import TextToSpeechListenerTask
 from mind.devices.microphone import MicrophoneStreamTask
@@ -21,6 +22,7 @@ def setup_registry():
     registry.register_tasks(
         [
             ChatBotListenerTask,
+            (ObjectDetectionListenerTask, (True, True)),
             SpeechToTextListenerTask,
             TextToSpeechListenerTask,
             BoardWebSocketHandlerListenerTask,
@@ -31,6 +33,7 @@ def setup_registry():
     registry.register_listeners(
         [
             (ChatBotListenerTask, Text),
+            (ObjectDetectionListenerTask, VideoFrame),
             (SpeechToTextListenerTask, AudioFrame),
             (TextToSpeechListenerTask, Text),
             (BoardWebSocketHandlerListenerTask, Text),

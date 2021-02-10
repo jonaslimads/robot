@@ -18,11 +18,12 @@ from mind.models import VideoFrame, Message, Text
 logger = get_logger(__name__)
 
 
+# TODO sync processing with video frame input, in other words,
+# fix the issue where VideoFrames come fast, but the processing is slow, which
+# fills the queue up and slow down the output.
 class ObjectDetectionListenerTask(Listener, Task):
 
     queue: Queue = Queue(maxsize=500)
-
-    running = False
 
     confidence_threshold = 0.5
 
